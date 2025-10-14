@@ -1,12 +1,16 @@
 import { Article, ArticlesResponse, NewsSource, ScrapingResult } from '../types';
 import { HackerNewsScraper } from './scrapers/hackerNews';
 import { RedditScraper } from './scrapers/reddit';
+import { CNNScraper } from './scrapers/cnn';
+import { FoxNewsScraper } from './scrapers/foxNews';
 
 export class NewsService {
   private articles: Article[] = [];
   private scrapers = [
     new HackerNewsScraper(),
-    new RedditScraper()
+    new RedditScraper(),
+    new CNNScraper(),
+    new FoxNewsScraper()
   ];
 
   async getArticles(params: {
@@ -19,7 +23,7 @@ export class NewsService {
     // Filter by source if specified
     if (params.source) {
       filteredArticles = this.articles.filter(
-        article => article.source.toLowerCase() === params.source.toLowerCase()
+        article => article.source.toLowerCase() === params.source!.toLowerCase()
       );
     }
 
