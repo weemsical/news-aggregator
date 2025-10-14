@@ -1,34 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './App.css';
 import apiService, { Article, NewsSource } from './services/apiService';
 
 function App() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [sources, setSources] = useState<NewsSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalArticles, setTotalArticles] = useState(0);
-  const [selectedSource, setSelectedSource] = useState<string>('');
   const [isScrapingManually, setIsScrapingManually] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
 
-  const ARTICLES_PER_PAGE = 20;
-
-  const fetchArticles = useCallback(async (page = 1, source = '') => {
+  const fetchArticles = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       const response = await apiService.getArticles({
-        page,
-        limit: ARTICLES_PER_PAGE,
-        source: source || undefined
+        page: 1,
+        limit: 100 // Get more articles for better categorization
       });
       
       setArticles(response.articles);
-      setTotalArticles(response.total);
-      setCurrentPage(response.page);
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Failed to fetch articles:', err);
@@ -39,22 +31,13 @@ function App() {
     }
   }, []);
 
-  const fetchSources = useCallback(async () => {
-    try {
-      const sourcesData = await apiService.getSources();
-      setSources(sourcesData);
-    } catch (err) {
-      console.error('Failed to fetch sources:', err);
-    }
-  }, []);
 
   const handleManualScraping = async () => {
     try {
       setIsScrapingManually(true);
       await apiService.triggerScraping();
       // Refresh articles after scraping
-      await fetchArticles(1, selectedSource);
-      setCurrentPage(1);
+      await fetchArticles();
     } catch (err) {
       console.error('Manual scraping failed:', err);
       setError(err instanceof Error ? err.message : 'Scraping failed');
@@ -63,22 +46,54 @@ function App() {
     }
   };
 
-  const handleSourceChange = (source: string) => {
-    setSelectedSource(source);
-    setCurrentPage(1);
-    fetchArticles(1, source);
-  };
-
-  const handlePageChange = (page: number) => {
-    fetchArticles(page, selectedSource);
+  const toggleCategory = (category: string) => {
+    const newSelectedCategories = new Set(selectedCategories);
+    if (newSelectedCategories.has(category)) {
+      newSelectedCategories.delete(category);
+    } else {
+      newSelectedCategories.add(category);
+    }
+    setSelectedCategories(newSelectedCategories);
   };
 
   useEffect(() => {
-    fetchSources();
     fetchArticles();
-  }, [fetchArticles, fetchSources]);
+  }, [fetchArticles]);
 
-  const totalPages = Math.ceil(totalArticles / ARTICLES_PER_PAGE);
+  // Group articles by category
+  const groupedArticles = useMemo(() => {
+    const groups: { [key: string]: Article[] } = {};
+    
+    articles.forEach(article => {
+      const category = article.category || 'uncategorized';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(article);
+    });
+    
+    // Sort articles within each category by date
+    Object.keys(groups).forEach(category => {
+      groups[category].sort((a, b) => 
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+    });
+    
+    return groups;
+  }, [articles]);
+
+  // Get available categories
+  const availableCategories = useMemo(() => {
+    return Object.keys(groupedArticles).sort();
+  }, [groupedArticles]);
+
+  // Filter categories based on selection
+  const displayedCategories = useMemo(() => {
+    if (selectedCategories.size === 0) {
+      return availableCategories; // Show all if none selected
+    }
+    return availableCategories.filter(cat => selectedCategories.has(cat));
+  }, [availableCategories, selectedCategories]);
 
   return (
     <div className="App">
@@ -87,21 +102,21 @@ function App() {
         <p>Latest articles from multiple news sources</p>
         
         <div className="header-controls">
-          <div className="source-filter">
-            <label htmlFor="source-select">Filter by source:</label>
-            <select 
-              id="source-select"
-              value={selectedSource} 
-              onChange={(e) => handleSourceChange(e.target.value)}
-              disabled={loading}
-            >
-              <option value="">All sources</option>
-              {sources.map((source) => (
-                <option key={source.id} value={source.name}>
-                  {source.name}
-                </option>
+          <div className="category-filters">
+            <label>Show categories:</label>
+            <div className="category-checkboxes">
+              {availableCategories.map((category) => (
+                <label key={category} className="category-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.size === 0 || selectedCategories.has(category)}
+                    onChange={() => toggleCategory(category)}
+                    disabled={loading}
+                  />
+                  <span className="category-name">{category}</span>
+                </label>
               ))}
-            </select>
+            </div>
           </div>
           
           <button 
@@ -124,7 +139,7 @@ function App() {
         {error && (
           <div className="error-message">
             <p>⚠️ {error}</p>
-            <button onClick={() => fetchArticles(currentPage, selectedSource)}>
+            <button onClick={() => fetchArticles()}>
               Try Again
             </button>
           </div>
@@ -140,11 +155,7 @@ function App() {
             {articles.length === 0 ? (
               <div className="empty-state">
                 <h3>No articles available</h3>
-                <p>
-                  {selectedSource 
-                    ? `No articles found for ${selectedSource}. Try selecting a different source or refresh articles.`
-                    : 'No articles found. Try refreshing to fetch the latest news.'}
-                </p>
+                <p>No articles found. Try refreshing to fetch the latest news.</p>
                 <button onClick={handleManualScraping} disabled={isScrapingManually}>
                   {isScrapingManually ? 'Scraping...' : 'Fetch Articles'}
                 </button>
@@ -152,68 +163,52 @@ function App() {
             ) : (
               <>
                 <div className="articles-info">
-                  <p>
-                    Showing {articles.length} of {totalArticles} articles
-                    {selectedSource && ` from ${selectedSource}`}
-                  </p>
+                  <p>Showing {articles.length} articles organized by category</p>
                 </div>
                 
-                <div className="articles">
-                  {articles.map((article) => (
-                    <article key={article.id} className="article-card">
-                      <h3 className="article-title">{article.title}</h3>
+                <div className="categories-container">
+                  {displayedCategories.map((category) => (
+                    <div key={category} className="category-section">
+                      <h2 className="category-title">
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                        <span className="category-count">({groupedArticles[category].length})</span>
+                      </h2>
                       
-                      <p className="article-meta">
-                        {new Date(article.publishedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                      
-                      {article.description && (
-                        <p className="article-description">{article.description}</p>
-                      )}
-                      
-                      <div className="article-actions">
-                        <a 
-                          href={article.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="read-more-link"
-                        >
-                          Read full article →
-                        </a>
+                      <div className="articles">
+                        {groupedArticles[category].map((article) => (
+                          <article key={article.id} className="article-card">
+                            <h3 className="article-title">{article.title}</h3>
+                            
+                            <p className="article-meta">
+                              <span className="article-source">{article.source}</span> • {new Date(article.publishedAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                            
+                            {article.description && (
+                              <p className="article-description">{article.description}</p>
+                            )}
+                            
+                            <div className="article-actions">
+                              <a 
+                                href={article.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="read-more-link"
+                              >
+                                Read full article →
+                              </a>
+                            </div>
+                          </article>
+                        ))}
                       </div>
-                    </article>
+                    </div>
                   ))}
                 </div>
-                
-                {totalPages > 1 && (
-                  <div className="pagination">
-                    <button 
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage <= 1 || loading}
-                      className="pagination-button"
-                    >
-                      ← Previous
-                    </button>
-                    
-                    <span className="pagination-info">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    
-                    <button 
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= totalPages || loading}
-                      className="pagination-button"
-                    >
-                      Next →
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </>

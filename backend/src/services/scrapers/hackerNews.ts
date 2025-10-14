@@ -31,7 +31,8 @@ export class HackerNewsScraper implements Scraper {
             source: 'Hacker News',
             publishedAt: new Date(story.time * 1000).toISOString(),
             description: story.text,
-            author: story.by
+            author: story.by,
+            category: 'politics'
           });
 
         } catch (error) {
