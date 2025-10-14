@@ -1,0 +1,40 @@
+{
+  "name": "news-aggregator-backend",
+  "version": "1.0.0",
+  "description": "Backend service for news aggregation and scraping",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/cors": "^2.8.0",
+    "@types/node": "^20.0.0",
+    "@types/node-cron": "^3.0.0",
+    "@types/jest": "^29.0.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "keywords": [
+    "news",
+    "aggregator",
+    "scraping",
+    "express",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT"
+}
