@@ -37,7 +37,7 @@ function App() {
                 <div key={article.id} className="article-card">
                   <h3>{article.title}</h3>
                   <p className="article-meta">
-                    {article.source} - {new Date(article.publishedAt).toLocaleDateString()}
+                    {new Date(article.publishedAt).toLocaleDateString()}
                   </p>
                   {article.description && (
                     <p className="article-description">{article.description}</p>
