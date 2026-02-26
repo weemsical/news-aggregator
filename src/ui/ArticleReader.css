@@ -1,0 +1,66 @@
+.article-reader {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.article-reader__back {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.article-reader__back:hover {
+  border-color: #888;
+}
+
+.article-reader__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+
+.article-reader__subtitle {
+  margin: 0 0 1rem;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.article-reader__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.article-reader__tag {
+  background: #f0f0f0;
+  color: #444;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.article-reader__body {
+  position: relative;
+}
+
+.article-reader__body p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0 0 1.2rem;
+  color: #222;
+}
+
+.article-reader__highlight {
+  background-color: #fff3cd;
+  border-bottom: 2px solid #e6a817;
+  padding: 0 2px;
+  border-radius: 2px;
+  cursor: pointer;
+}
