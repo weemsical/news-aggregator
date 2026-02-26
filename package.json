@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "fetch-articles": "npx tsx src/scripts/fetchArticles.ts"
+    "fetch-articles": "npx tsx src/scripts/fetchArticles.ts",
+    "start": "npm install && npm run fetch-articles; npm run dev"
   },
   "keywords": [],
   "author": "",

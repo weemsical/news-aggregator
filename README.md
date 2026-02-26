@@ -15,8 +15,7 @@ nvm use
 **Install and run:**
 
 ```bash
-npm install
-npm run dev
+npm run start
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
@@ -27,6 +26,7 @@ You'll see a list of anonymized news articles. Click one to read the full text. 
 
 | Command | What it does |
 |---|---|
+| `npm run start` | Install deps, fetch fresh articles, and start the dev server |
 | `npm run dev` | Start the Vite dev server with hot reload |
 | `npm test` | Run all tests (services + components) |
 | `npm run build` | Build for production into `dist-ui/` |
@@ -35,7 +35,7 @@ You'll see a list of anonymized news articles. Click one to read the full text. 
 
 ## How It Works
 
-1. **Articles are ingested** from 8 news sources via RSS feeds (Fox News, CNN, BBC, Reuters, MSNBC, AP News, New York Post, The Guardian). Run `npm run fetch-articles` to pull fresh content, or use the 12 built-in seed articles.
+1. **Articles are ingested** from 8 news sources via RSS feeds (Fox News, CNN, BBC, Reuters, MSNBC, AP News, New York Post, The Guardian). Fetched articles appear first, with seed articles filling in underneath. As fresh articles arrive from a source, one seed from that source is replaced.
 2. **Identifying info is stripped** — source name, author, and URL are removed before you see anything
 3. **You read blind** — judge the writing on its own merit, not the masthead
 4. **Flag what you spot** — highlight a passage in the article, write a short explanation of the propaganda technique you see, and submit
