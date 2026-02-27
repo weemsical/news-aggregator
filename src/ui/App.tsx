@@ -1,11 +1,17 @@
-import { useState, useEffect } from "react";
-import { AnonymizedArticle } from "../types";
+import { useState, useEffect, useMemo } from "react";
+import { AnonymizedArticle, LeaderboardEntry } from "../types";
 import { loadArticles } from "./articleData";
+import { fetchLeaderboard } from "./apiClient";
 import { ArticleList } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
+import { SourceLeaderboard } from "./SourceLeaderboard";
+import { AdminPanel } from "./AdminPanel";
+import { DateFilter } from "./DateFilter";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { AuthForm } from "./AuthForm";
 import "./App.css";
+
+type View = "articles" | "leaderboard" | "admin";
 
 function AppContent() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -13,6 +19,23 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [showAuthForm, setShowAuthForm] = useState(false);
+  const [view, setView] = useState<View>("articles");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const filteredArticles = useMemo(() => {
+    const fromMs = fromDate ? new Date(fromDate).getTime() : 0;
+    const toMs = toDate
+      ? new Date(toDate).getTime() + 24 * 60 * 60 * 1000 - 1
+      : Infinity;
+    return articles.filter((a) => a.fetchedAt >= fromMs && a.fetchedAt <= toMs);
+  }, [articles, fromDate, toDate]);
+
+  const handleResetDates = () => {
+    setFromDate("");
+    setToDate("");
+  };
 
   useEffect(() => {
     loadArticles().then((loaded) => {
@@ -21,9 +44,22 @@ function AppContent() {
     });
   }, []);
 
+  useEffect(() => {
+    if (view === "leaderboard") {
+      fetchLeaderboard()
+        .then(setLeaderboard)
+        .catch(() => setLeaderboard([]));
+    }
+  }, [view]);
+
   const selectedArticle = selectedArticleId
     ? articles.find((a) => a.id === selectedArticleId)
     : undefined;
+
+  const handleNavArticles = () => {
+    setView("articles");
+    setSelectedArticleId(null);
+  };
 
   return (
     <div className="app">
@@ -52,9 +88,35 @@ function AppContent() {
           </div>
         </div>
         <p className="app__tagline">Read the news. Spot the spin.</p>
+        <nav className="app__nav">
+          <button
+            className={`app__nav-btn${view === "articles" ? " app__nav-btn--active" : ""}`}
+            onClick={handleNavArticles}
+          >
+            Articles
+          </button>
+          <button
+            className={`app__nav-btn${view === "leaderboard" ? " app__nav-btn--active" : ""}`}
+            onClick={() => setView("leaderboard")}
+          >
+            Leaderboard
+          </button>
+          {user?.isAdmin && (
+            <button
+              className={`app__nav-btn${view === "admin" ? " app__nav-btn--active" : ""}`}
+              onClick={() => setView("admin")}
+            >
+              Admin
+            </button>
+          )}
+        </nav>
       </header>
       <main className="app__main">
-        {loading ? (
+        {view === "admin" ? (
+          <AdminPanel />
+        ) : view === "leaderboard" ? (
+          <SourceLeaderboard entries={leaderboard} />
+        ) : loading ? (
           <p className="app__loading">Loading articles...</p>
         ) : selectedArticle ? (
           <ArticleReader
@@ -62,10 +124,21 @@ function AppContent() {
             onBack={() => setSelectedArticleId(null)}
           />
         ) : (
-          <ArticleList
-            articles={articles}
-            onSelectArticle={setSelectedArticleId}
-          />
+          <>
+            <DateFilter
+              fromDate={fromDate}
+              toDate={toDate}
+              onFromDateChange={setFromDate}
+              onToDateChange={setToDate}
+              onReset={handleResetDates}
+              filteredCount={filteredArticles.length}
+              totalCount={articles.length}
+            />
+            <ArticleList
+              articles={filteredArticles}
+              onSelectArticle={setSelectedArticleId}
+            />
+          </>
         )}
       </main>
       {showAuthForm && <AuthForm onClose={() => setShowAuthForm(false)} />}

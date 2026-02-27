@@ -6,6 +6,11 @@ import {
   login,
   logout,
   fetchCurrentUser,
+  fetchLeaderboard,
+  fetchAdminFeedSources,
+  addFeedSource,
+  deleteFeedSource,
+  fetchNow,
 } from "../apiClient";
 
 const mockArticles = [
@@ -180,5 +185,133 @@ describe("fetchCurrentUser", () => {
 
     const user = await fetchCurrentUser();
     expect(user).toBeNull();
+  });
+});
+
+describe("fetchLeaderboard", () => {
+  it("returns leaderboard entries from /api/leaderboard", async () => {
+    const mockEntries = [
+      { sourceId: "fox-news", sourceName: "Fox News", flagCount: 5 },
+      { sourceId: "cnn", sourceName: "CNN", flagCount: 3 },
+    ];
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockEntries),
+    });
+
+    const entries = await fetchLeaderboard();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/leaderboard", { credentials: "include" });
+    expect(entries).toEqual(mockEntries);
+  });
+
+  it("throws when the response is not ok", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+
+    await expect(fetchLeaderboard()).rejects.toThrow("Failed to fetch leaderboard");
+  });
+});
+
+describe("fetchAdminFeedSources", () => {
+  it("returns feed sources from /api/admin/feed-sources", async () => {
+    const mockSources = [
+      { sourceId: "fox-news", name: "Fox News", feedUrl: "https://fox.com/feed", defaultTags: ["politics"], isDynamic: false },
+    ];
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockSources),
+    });
+
+    const sources = await fetchAdminFeedSources();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/feed-sources", { credentials: "include" });
+    expect(sources).toEqual(mockSources);
+  });
+
+  it("throws when the response is not ok", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    await expect(fetchAdminFeedSources()).rejects.toThrow("Failed to fetch feed sources");
+  });
+});
+
+describe("addFeedSource", () => {
+  it("posts source data and returns the created source", async () => {
+    const created = { sourceId: "new", name: "New", feedUrl: "https://new.com/feed", defaultTags: [], isDynamic: true };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(created),
+    });
+
+    const result = await addFeedSource({
+      sourceId: "new",
+      name: "New",
+      feedUrl: "https://new.com/feed",
+      defaultTags: [],
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/feed-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ sourceId: "new", name: "New", feedUrl: "https://new.com/feed", defaultTags: [] }),
+    });
+    expect(result).toEqual(created);
+  });
+
+  it("throws with server error message on failure", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ error: "sourceId is required" }),
+    });
+
+    await expect(addFeedSource({ sourceId: "", name: "X", feedUrl: "https://x.com", defaultTags: [] }))
+      .rejects.toThrow("sourceId is required");
+  });
+});
+
+describe("deleteFeedSource", () => {
+  it("sends DELETE request for the source", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+    await deleteFeedSource("custom-source");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/feed-sources/custom-source", {
+      method: "DELETE",
+      credentials: "include",
+    });
+  });
+
+  it("throws when the response is not ok", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404 });
+
+    await expect(deleteFeedSource("nonexistent")).rejects.toThrow("Failed to delete feed source");
+  });
+});
+
+describe("fetchNow", () => {
+  it("triggers fetch and returns result", async () => {
+    const result = { articlesFound: 10, newArticlesSaved: 3 };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(result),
+    });
+
+    const res = await fetchNow("fox-news");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/feed-sources/fox-news/fetch", {
+      method: "POST",
+      credentials: "include",
+    });
+    expect(res).toEqual(result);
+  });
+
+  it("throws with server error on failure", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ error: "Failed to fetch feed: timeout" }),
+    });
+
+    await expect(fetchNow("broken")).rejects.toThrow("Failed to fetch feed: timeout");
   });
 });

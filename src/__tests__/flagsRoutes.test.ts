@@ -3,6 +3,7 @@ import { createApp } from "../server/app";
 import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
 import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
 import { InMemoryUserRepository } from "../repositories/InMemoryUserRepository";
+import { InMemoryFeedSourceRepository } from "../repositories/InMemoryFeedSourceRepository";
 import { Article } from "../types";
 import { signToken } from "../server/auth";
 
@@ -20,7 +21,8 @@ function buildApp() {
   const articles = new InMemoryArticleRepository();
   const flags = new InMemoryFlagRepository();
   const users = new InMemoryUserRepository();
-  const app = createApp({ articles, flags, users });
+  const feedSources = new InMemoryFeedSourceRepository();
+  const app = createApp({ articles, flags, users, feedSources });
   return { app, articles, flags, users };
 }
 

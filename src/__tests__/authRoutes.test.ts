@@ -3,12 +3,14 @@ import { createApp } from "../server/app";
 import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
 import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
 import { InMemoryUserRepository } from "../repositories/InMemoryUserRepository";
+import { InMemoryFeedSourceRepository } from "../repositories/InMemoryFeedSourceRepository";
 
 function buildApp() {
   return createApp({
     articles: new InMemoryArticleRepository(),
     flags: new InMemoryFlagRepository(),
     users: new InMemoryUserRepository(),
+    feedSources: new InMemoryFeedSourceRepository(),
   });
 }
 
@@ -135,5 +137,53 @@ describe("GET /api/auth/me", () => {
       .get("/api/auth/me")
       .set("Cookie", "token=invalid-token");
     expect(res.status).toBe(401);
+  });
+
+  it("returns isAdmin true when user email is in ADMIN_EMAILS", async () => {
+    const originalEnv = process.env.ADMIN_EMAILS;
+    process.env.ADMIN_EMAILS = "test@example.com";
+
+    const app = buildApp();
+    const signupRes = await request(app)
+      .post("/api/auth/signup")
+      .send({ email: "test@example.com", password: "password123" });
+    const cookie = signupRes.headers["set-cookie"];
+
+    const res = await request(app)
+      .get("/api/auth/me")
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.isAdmin).toBe(true);
+
+    if (originalEnv !== undefined) {
+      process.env.ADMIN_EMAILS = originalEnv;
+    } else {
+      delete process.env.ADMIN_EMAILS;
+    }
+  });
+
+  it("returns isAdmin false when user email is not in ADMIN_EMAILS", async () => {
+    const originalEnv = process.env.ADMIN_EMAILS;
+    process.env.ADMIN_EMAILS = "other@example.com";
+
+    const app = buildApp();
+    const signupRes = await request(app)
+      .post("/api/auth/signup")
+      .send({ email: "test@example.com", password: "password123" });
+    const cookie = signupRes.headers["set-cookie"];
+
+    const res = await request(app)
+      .get("/api/auth/me")
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.isAdmin).toBe(false);
+
+    if (originalEnv !== undefined) {
+      process.env.ADMIN_EMAILS = originalEnv;
+    } else {
+      delete process.env.ADMIN_EMAILS;
+    }
   });
 });

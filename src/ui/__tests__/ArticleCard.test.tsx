@@ -35,6 +35,12 @@ describe("ArticleCard", () => {
     expect(screen.getByText("economy")).toBeInTheDocument();
   });
 
+  it("renders the fetchedAt date", () => {
+    render(<ArticleCard article={sampleArticle} onSelect={() => {}} />);
+    // 1738000000000 = Jan 27, 2025
+    expect(screen.getByText(/jan.*27.*2025/i)).toBeInTheDocument();
+  });
+
   it("calls onSelect with the article id when clicked", async () => {
     const handleSelect = jest.fn();
     render(<ArticleCard article={sampleArticle} onSelect={handleSelect} />);

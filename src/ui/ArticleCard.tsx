@@ -17,6 +17,16 @@ export function ArticleCard({ article, onSelect }: ArticleCardProps) {
       {article.subtitle && (
         <p className="article-card__subtitle">{article.subtitle}</p>
       )}
+      <time
+        className="article-card__date"
+        dateTime={new Date(article.fetchedAt).toISOString()}
+      >
+        {new Date(article.fetchedAt).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })}
+      </time>
       <div className="article-card__tags">
         {article.sourceTags.map((tag) => (
           <span key={tag} className="article-card__tag">

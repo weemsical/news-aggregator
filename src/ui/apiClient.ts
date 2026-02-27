@@ -1,8 +1,22 @@
-import { AnonymizedArticle, PropagandaFlag } from "../types";
+import { AnonymizedArticle, PropagandaFlag, LeaderboardEntry } from "../types";
 
 export interface AuthUser {
   id: string;
   email: string;
+  isAdmin?: boolean;
+}
+
+export interface AdminFeedSource {
+  sourceId: string;
+  name: string;
+  feedUrl: string;
+  defaultTags: string[];
+  isDynamic: boolean;
+}
+
+export interface FetchNowResult {
+  articlesFound: number;
+  newArticlesSaved: number;
 }
 
 export async function fetchArticles(): Promise<AnonymizedArticle[]> {
@@ -78,5 +92,58 @@ export async function logout(): Promise<void> {
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
   const response = await fetch("/api/auth/me", { credentials: "include" });
   if (!response.ok) return null;
+  return response.json();
+}
+
+export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
+  const response = await fetch("/api/leaderboard", { credentials: "include" });
+  if (!response.ok) throw new Error("Failed to fetch leaderboard");
+  return response.json();
+}
+
+export async function fetchAdminFeedSources(): Promise<AdminFeedSource[]> {
+  const response = await fetch("/api/admin/feed-sources", {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch feed sources");
+  return response.json();
+}
+
+export async function addFeedSource(data: {
+  sourceId: string;
+  name: string;
+  feedUrl: string;
+  defaultTags: string[];
+}): Promise<AdminFeedSource> {
+  const response = await fetch("/api/admin/feed-sources", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to add feed source");
+  }
+  return response.json();
+}
+
+export async function deleteFeedSource(sourceId: string): Promise<void> {
+  const response = await fetch(`/api/admin/feed-sources/${sourceId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to delete feed source");
+}
+
+export async function fetchNow(sourceId: string): Promise<FetchNowResult> {
+  const response = await fetch(`/api/admin/feed-sources/${sourceId}/fetch`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to fetch articles");
+  }
   return response.json();
 }

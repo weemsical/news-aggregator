@@ -1,7 +1,9 @@
 import { feedSources } from "../data/feedSources";
+import { getAllFeedSources } from "../data/getAllFeedSources";
 import { fetchFeed } from "../services/RssFetcher";
 import { parseRssFeed } from "../services/RssParser";
 import { ArticleRepository } from "../repositories/ArticleRepository";
+import { FeedSourceRepository } from "../repositories/FeedSourceRepository";
 import { Article } from "../types";
 
 export interface FetchResult {
@@ -9,11 +11,18 @@ export interface FetchResult {
   failedSources: string[];
 }
 
-export async function runFetchArticles(repo: ArticleRepository): Promise<FetchResult> {
+export async function runFetchArticles(
+  repo: ArticleRepository,
+  feedSourceRepo?: FeedSourceRepository
+): Promise<FetchResult> {
+  const sources = feedSourceRepo
+    ? await getAllFeedSources(feedSourceRepo)
+    : feedSources;
+
   const failedSources: string[] = [];
   const newArticles: Article[] = [];
 
-  for (const source of feedSources) {
+  for (const source of sources) {
     const result = await fetchFeed(source.feedUrl);
 
     if (!result.ok || !result.xml) {
@@ -48,7 +57,7 @@ if (isDirectRun) {
   const { createRepositories } = require("../repositories/createRepositories");
   const repos = createRepositories();
 
-  runFetchArticles(repos.articles).then((result) => {
+  runFetchArticles(repos.articles, repos.feedSources).then((result) => {
     console.log(`Fetched ${result.totalArticles} total articles.`);
     if (result.failedSources.length > 0) {
       console.error(`Failed sources: ${result.failedSources.join(", ")}`);

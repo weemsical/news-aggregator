@@ -1,11 +1,14 @@
 export type { ArticleRepository } from "./ArticleRepository";
 export type { FlagRepository } from "./FlagRepository";
 export type { UserRepository } from "./UserRepository";
+export type { FeedSourceRepository } from "./FeedSourceRepository";
 export { InMemoryArticleRepository } from "./InMemoryArticleRepository";
 export { InMemoryFlagRepository } from "./InMemoryFlagRepository";
 export { InMemoryUserRepository } from "./InMemoryUserRepository";
+export { InMemoryFeedSourceRepository } from "./InMemoryFeedSourceRepository";
 export { PostgresArticleRepository } from "./PostgresArticleRepository";
 export { PostgresFlagRepository } from "./PostgresFlagRepository";
 export { PostgresUserRepository } from "./PostgresUserRepository";
+export { PostgresFeedSourceRepository } from "./PostgresFeedSourceRepository";
 export { createRepositories } from "./createRepositories";
 export type { Repositories } from "./createRepositories";

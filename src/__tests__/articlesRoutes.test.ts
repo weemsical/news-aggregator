@@ -3,6 +3,7 @@ import { createApp } from "../server/app";
 import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
 import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
 import { InMemoryUserRepository } from "../repositories/InMemoryUserRepository";
+import { InMemoryFeedSourceRepository } from "../repositories/InMemoryFeedSourceRepository";
 import { Article } from "../types";
 
 const foxArticle: Article = {
@@ -30,7 +31,7 @@ describe("GET /api/articles", () => {
   it("returns empty array when no articles exist", async () => {
     const articles = new InMemoryArticleRepository();
     const flags = new InMemoryFlagRepository();
-    const app = createApp({ articles, flags, users: new InMemoryUserRepository() });
+    const app = createApp({ articles, flags, users: new InMemoryUserRepository(), feedSources: new InMemoryFeedSourceRepository() });
 
     const res = await request(app).get("/api/articles");
     expect(res.status).toBe(200);
@@ -41,7 +42,7 @@ describe("GET /api/articles", () => {
     const articles = new InMemoryArticleRepository();
     const flags = new InMemoryFlagRepository();
     await articles.save(foxArticle);
-    const app = createApp({ articles, flags, users: new InMemoryUserRepository() });
+    const app = createApp({ articles, flags, users: new InMemoryUserRepository(), feedSources: new InMemoryFeedSourceRepository() });
 
     const res = await request(app).get("/api/articles");
     expect(res.status).toBe(200);
@@ -56,7 +57,7 @@ describe("GET /api/articles", () => {
     const flags = new InMemoryFlagRepository();
     await articles.save(foxArticle);
     await articles.save(cnnArticle);
-    const app = createApp({ articles, flags, users: new InMemoryUserRepository() });
+    const app = createApp({ articles, flags, users: new InMemoryUserRepository(), feedSources: new InMemoryFeedSourceRepository() });
 
     const res = await request(app).get("/api/articles");
     expect(res.body[0].id).toBe("article-2");
@@ -69,7 +70,7 @@ describe("GET /api/articles/:id", () => {
     const articles = new InMemoryArticleRepository();
     const flags = new InMemoryFlagRepository();
     await articles.save(foxArticle);
-    const app = createApp({ articles, flags, users: new InMemoryUserRepository() });
+    const app = createApp({ articles, flags, users: new InMemoryUserRepository(), feedSources: new InMemoryFeedSourceRepository() });
 
     const res = await request(app).get("/api/articles/article-1");
     expect(res.status).toBe(200);
@@ -80,7 +81,7 @@ describe("GET /api/articles/:id", () => {
   it("returns 404 for non-existent article", async () => {
     const articles = new InMemoryArticleRepository();
     const flags = new InMemoryFlagRepository();
-    const app = createApp({ articles, flags, users: new InMemoryUserRepository() });
+    const app = createApp({ articles, flags, users: new InMemoryUserRepository(), feedSources: new InMemoryFeedSourceRepository() });
 
     const res = await request(app).get("/api/articles/nonexistent");
     expect(res.status).toBe(404);

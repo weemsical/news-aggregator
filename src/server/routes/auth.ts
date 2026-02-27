@@ -93,7 +93,13 @@ export function authRouter(users: UserRepository): Router {
       res.status(401).json({ error: "User not found" });
       return;
     }
-    res.json({ id: user.id, email: user.email });
+    const adminEmails = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const isAdmin = adminEmails.includes(user.email.toLowerCase());
+
+    res.json({ id: user.id, email: user.email, isAdmin });
   });
 
   return router;
