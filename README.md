@@ -24,17 +24,20 @@ You'll see a list of anonymized news articles. Click one to read the full text. 
 
 ## Database Setup (Optional)
 
-The app works out of the box with in-memory storage (flags are lost on restart). To persist articles and flags across sessions, set up a PostgreSQL database:
+The app works out of the box with in-memory storage (data is lost on restart). To persist articles, flags, and user accounts across sessions, set up a PostgreSQL database:
 
 1. Create a `.env` file from the example:
    ```bash
    cp .env.example .env
    ```
-2. Set your `DATABASE_URL` in `.env`:
+2. Set your `DATABASE_URL` and `JWT_SECRET` in `.env`:
    ```
    DATABASE_URL=postgresql://localhost:5432/icallbullshit
+   JWT_SECRET=change-me-to-a-random-secret
    ```
 3. Tables are created automatically on server start (auto-migration).
+
+`JWT_SECRET` is required in production. In development, a default fallback is used.
 
 Free PostgreSQL hosting: [Neon](https://neon.tech), [Supabase](https://supabase.com), [Railway](https://railway.app), [Render](https://render.com).
 
@@ -60,24 +63,32 @@ Browser (:5173) → Vite proxy → Express API (:3001) → Repository Interface 
 Fetch Script → Repository Interface → PostgreSQL / InMemory
 ```
 
-The **repository pattern** decouples all storage from the rest of the app. Swapping databases requires zero changes to routes, UI, or business logic — just implement the `ArticleRepository` and `FlagRepository` interfaces and update the factory.
+The **repository pattern** decouples all storage from the rest of the app. Swapping databases requires zero changes to routes, UI, or business logic — just implement the `ArticleRepository`, `FlagRepository`, and `UserRepository` interfaces and update the factory.
+
+**Authentication** uses JWT tokens stored in httpOnly cookies. The server sets the cookie on signup/login and clears it on logout. The `requireAuth` middleware protects flag creation; `optionalAuth` allows unauthenticated read access.
 
 ## How It Works
 
 1. **Articles are ingested** from 8 news sources via RSS feeds (Fox News, CNN, BBC, Reuters, MSNBC, AP News, New York Post, The Guardian). Articles are stored in the database and served via the API. Seed articles load automatically when the database is empty.
 2. **Identifying info is stripped** — source name, author, and URL are removed by the API before reaching the browser
 3. **You read blind** — judge the writing on its own merit, not the masthead
-4. **Flag what you spot** — highlight a passage in the article, write a short explanation of the propaganda technique you see, and submit
-5. **Flags persist** — saved to the database via the API, flagged passages appear with yellow highlights across sessions
+4. **Sign up / log in** — create an account to flag articles (read-only access without an account)
+5. **Flag what you spot** — highlight a passage in the article, write a short explanation of the propaganda technique you see, and submit
+6. **Toggle your view** — switch between "My Flags", "All Flags", or "None" to compare your flags against everyone else's
+7. **Flags persist** — saved to the database via the API, flagged passages appear with yellow highlights across sessions
 
 ## API
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/articles` | All articles (anonymized, newest first) |
-| GET | `/api/articles/:id` | Single article (anonymized) |
-| GET | `/api/articles/:id/flags` | Flags for an article |
-| POST | `/api/articles/:id/flags` | Create a flag (body: `{ highlightedText, explanation }`) |
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/api/auth/signup` | No | Create account (body: `{ email, password }`) |
+| POST | `/api/auth/login` | No | Log in, sets JWT cookie (body: `{ email, password }`) |
+| POST | `/api/auth/logout` | No | Clear JWT cookie |
+| GET | `/api/auth/me` | Yes | Current user from JWT |
+| GET | `/api/articles` | No | All articles (anonymized, newest first) |
+| GET | `/api/articles/:id` | No | Single article (anonymized) |
+| GET | `/api/articles/:id/flags` | No | Flags for an article (optional `?userId` filter) |
+| POST | `/api/articles/:id/flags` | Yes | Create a flag (body: `{ highlightedText, explanation }`) |
 
 ## Project Structure
 
@@ -85,26 +96,30 @@ The **repository pattern** decouples all storage from the rest of the app. Swapp
 src/
 ├── types/                  Core data types
 │   ├── Article.ts            Article and AnonymizedArticle interfaces
-│   └── PropagandaFlag.ts     PropagandaFlag interface
+│   ├── PropagandaFlag.ts     PropagandaFlag interface (with userId)
+│   └── User.ts               User interface
 ├── repositories/           Storage layer (swappable)
 │   ├── ArticleRepository.ts  Interface for article storage
-│   ├── FlagRepository.ts     Interface for flag storage
-│   ├── InMemoryArticleRepository.ts   Map-based (tests/fallback)
-│   ├── InMemoryFlagRepository.ts      Map-based (tests/fallback)
-│   ├── PostgresArticleRepository.ts   PostgreSQL implementation
-│   ├── PostgresFlagRepository.ts      PostgreSQL implementation
-│   └── createRepositories.ts          Factory — picks impl via DATABASE_URL
+│   ├── FlagRepository.ts     Interface for flag storage (incl. findByArticleAndUser)
+│   ├── UserRepository.ts     Interface for user storage
+│   ├── InMemory*.ts          Map-based implementations (tests/fallback)
+│   ├── Postgres*.ts          PostgreSQL implementations
+│   └── createRepositories.ts Factory — picks impl via DATABASE_URL
 ├── db/                     Database infrastructure
-│   ├── migrations/           SQL migration files
+│   ├── migrations/           SQL migration files (001-003)
 │   ├── migrate.ts            Migration runner
 │   └── pool.ts               PostgreSQL connection pool
 ├── server/                 Express API
-│   ├── app.ts                Express app assembly
+│   ├── app.ts                Express app assembly (with cookie-parser)
+│   ├── auth.ts               Password hashing, JWT sign/verify, validation
 │   ├── index.ts              Entry point (migrate, seed, listen)
 │   ├── seedLoader.ts         Loads seed articles when DB is empty
+│   ├── middleware/
+│   │   └── requireAuth.ts    requireAuth + optionalAuth middleware
 │   └── routes/
 │       ├── articles.ts       GET /api/articles, GET /api/articles/:id
-│       └── flags.ts          GET/POST /api/articles/:id/flags
+│       ├── auth.ts           POST signup/login/logout, GET me
+│       └── flags.ts          GET/POST /api/articles/:id/flags (auth-protected POST)
 ├── services/               Business logic
 │   ├── anonymize.ts          Strips source-identifying fields
 │   ├── RssParser.ts          Parses RSS 2.0 and Atom feeds into Articles
@@ -116,16 +131,19 @@ src/
 │   └── fetchArticles.ts      CLI script to fetch, parse, dedupe, and save articles
 └── ui/                     React components
     ├── main.tsx              Entry point
-    ├── App.tsx               Root component — async article loading, view switching
-    ├── ArticleList.tsx       Scrollable list of article cards
-    ├── ArticleCard.tsx       Clickable card showing title, subtitle, and tags
-    ├── ArticleReader.tsx     Full article view with API-backed flags
+    ├── App.tsx               Root component — AuthProvider, async loading, view switching
+    ├── AuthContext.tsx        AuthProvider + useAuth hook (JWT cookie sessions)
+    ├── AuthForm.tsx           Modal login/signup form with validation
+    ├── ArticleList.tsx        Scrollable list of article cards
+    ├── ArticleCard.tsx        Clickable card showing title, subtitle, and tags
+    ├── ArticleReader.tsx      Full article view with auth-gated flagging and toggle
+    ├── FlagToggle.tsx         Three-way toggle: My Flags / All Flags / None
     ├── HighlightedParagraph.tsx  Renders paragraph with flagged text marked
-    ├── FlagPopover.tsx       Text selection popover for submitting flags
-    ├── highlightText.ts      Pure function to split text by highlight regions
-    ├── getSelectionInfo.ts   Wrapper around browser Selection API
-    ├── apiClient.ts          Browser API client (articles, flags)
-    └── articleData.ts        Async article loader (API or seed fallback)
+    ├── FlagPopover.tsx        Text selection popover for submitting flags
+    ├── highlightText.ts       Pure function to split text by highlight regions
+    ├── getSelectionInfo.ts    Wrapper around browser Selection API
+    ├── apiClient.ts           Browser API client (articles, flags, auth)
+    └── articleData.ts         Async article loader (API or seed fallback)
 ```
 
 ## Testing
@@ -136,10 +154,10 @@ Tests are split into two Jest projects that run together:
 npm test
 ```
 
-- **services** (Node environment) — repositories, contract tests, API routes, seed data, RSS parsing
-- **components** (jsdom environment) — React component rendering, user interaction, API client
+- **services** (Node environment) — repositories, contract tests, API routes, auth utilities, middleware, seed data, RSS parsing
+- **components** (jsdom environment) — React component rendering, user interaction, auth context, flag toggle, API client
 
-147 tests across 23 suites. PostgreSQL contract tests (19 tests, 2 suites) auto-skip when `DATABASE_URL` is not set.
+224 tests across 30 suites. PostgreSQL contract tests (30 tests, 3 suites) auto-skip when `DATABASE_URL` is not set.
 
 ## Tech Stack
 
@@ -147,6 +165,9 @@ npm test
 - **React 19** for the UI
 - **Express 5** for the API server
 - **PostgreSQL** via `pg` (default database)
+- **bcryptjs** for password hashing
+- **jsonwebtoken** for JWT auth
+- **cookie-parser** for httpOnly cookie sessions
 - **Vite** for dev server and builds
 - **Jest + ts-jest** for service tests
 - **React Testing Library** for component tests
@@ -156,10 +177,13 @@ npm test
 
 ## What's Built So Far
 
-- [x] Core types (Article, AnonymizedArticle, PropagandaFlag)
+- [x] Core types (Article, AnonymizedArticle, PropagandaFlag, User)
 - [x] Anonymization service
 - [x] Repository pattern with swappable storage (InMemory + PostgreSQL)
 - [x] Express API server with article and flag endpoints
+- [x] User authentication (signup, login, logout) with JWT httpOnly cookies
+- [x] Auth-protected flag creation (flags tied to user accounts)
+- [x] Three-way flag toggle (My Flags / All Flags / None)
 - [x] Seed articles from 8 news sources
 - [x] Article browser UI (list and reader views)
 - [x] Text highlighting and propaganda flagging UI
