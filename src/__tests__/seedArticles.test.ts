@@ -1,13 +1,13 @@
-import { Article } from "../types";
-import { ArticleStore } from "../services/ArticleStore";
-import { FlagStore } from "../services/FlagStore";
+import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
+import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
+import { anonymize } from "../services/anonymize";
 import { seedArticles } from "../data/seedArticles";
 
 describe("Seed Articles", () => {
   /**
    * Integration tests using real-world-style articles from diverse sources.
    * Verifies that the seed data is well-formed and works correctly
-   * through ArticleStore and FlagStore in a realistic setting.
+   * through the repository layer in a realistic setting.
    */
 
   it("should contain a meaningful number of articles from diverse sources", () => {
@@ -37,19 +37,20 @@ describe("Seed Articles", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("should all load into ArticleStore without errors", () => {
-    const store = new ArticleStore();
+  it("should all load into the article repository without errors", async () => {
+    const repo = new InMemoryArticleRepository();
 
-    seedArticles.forEach((article) => store.add(article));
+    await repo.saveBatch(seedArticles);
 
-    expect(store.count).toBe(seedArticles.length);
+    expect(await repo.count()).toBe(seedArticles.length);
   });
 
-  it("should all be retrievable as anonymized articles", () => {
-    const store = new ArticleStore();
-    seedArticles.forEach((article) => store.add(article));
+  it("should all be retrievable as anonymized articles", async () => {
+    const repo = new InMemoryArticleRepository();
+    await repo.saveBatch(seedArticles);
 
-    const anonymized = store.getAllAnonymized();
+    const all = await repo.findAll();
+    const anonymized = all.map(anonymize);
 
     expect(anonymized).toHaveLength(seedArticles.length);
     anonymized.forEach((article) => {
@@ -60,12 +61,11 @@ describe("Seed Articles", () => {
     });
   });
 
-  it("should support flagging passages from seed articles", () => {
-    const flagStore = new FlagStore();
+  it("should support flagging passages from seed articles", async () => {
+    const flagRepo = new InMemoryFlagRepository();
     const article = seedArticles[0];
 
-    // Flag a passage from the first paragraph
-    flagStore.add({
+    await flagRepo.save({
       id: "seed-flag-1",
       articleId: article.id,
       highlightedText: article.body[0].substring(0, 60),
@@ -73,27 +73,28 @@ describe("Seed Articles", () => {
       timestamp: Date.now(),
     });
 
-    expect(flagStore.count).toBe(1);
-    expect(flagStore.getByArticle(article.id)).toHaveLength(1);
+    expect(await flagRepo.count()).toBe(1);
+    expect(await flagRepo.findByArticle(article.id)).toHaveLength(1);
   });
 
-  it("should support flagging across multiple seed articles", () => {
-    const flagStore = new FlagStore();
+  it("should support flagging across multiple seed articles", async () => {
+    const flagRepo = new InMemoryFlagRepository();
 
-    seedArticles.slice(0, 4).forEach((article, i) => {
-      flagStore.add({
+    for (let i = 0; i < 4; i++) {
+      const article = seedArticles[i];
+      await flagRepo.save({
         id: `multi-flag-${i}`,
         articleId: article.id,
         highlightedText: article.body[0].substring(0, 60),
         explanation: `Flagged passage from article ${i + 1}`,
         timestamp: Date.now() + i,
       });
-    });
+    }
 
-    expect(flagStore.count).toBe(4);
-    seedArticles.slice(0, 4).forEach((article) => {
-      expect(flagStore.getByArticle(article.id)).toHaveLength(1);
-    });
+    expect(await flagRepo.count()).toBe(4);
+    for (const article of seedArticles.slice(0, 4)) {
+      expect(await flagRepo.findByArticle(article.id)).toHaveLength(1);
+    }
   });
 
   it("should cover a range of topic tags", () => {

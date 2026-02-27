@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { AnonymizedArticle } from "../types";
-import { FlagStore } from "../services/FlagStore";
 import { loadArticles } from "./articleData";
 import { ArticleList } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
@@ -10,7 +9,6 @@ export function App() {
   const [articles, setArticles] = useState<AnonymizedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
-  const [flagStore] = useState(() => new FlagStore());
 
   useEffect(() => {
     loadArticles().then((loaded) => {
@@ -36,7 +34,6 @@ export function App() {
           <ArticleReader
             article={selectedArticle}
             onBack={() => setSelectedArticleId(null)}
-            flagStore={flagStore}
           />
         ) : (
           <ArticleList

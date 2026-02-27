@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
-import { AnonymizedArticle } from "../types";
-import { FlagStore } from "../services/FlagStore";
+import { useState, useEffect, useRef } from "react";
+import { AnonymizedArticle, PropagandaFlag } from "../types";
+import { fetchFlags, createFlag } from "./apiClient";
 import { HighlightedParagraph } from "./HighlightedParagraph";
 import { FlagPopover } from "./FlagPopover";
 import { getSelectionInfo } from "./getSelectionInfo";
@@ -9,7 +9,6 @@ import "./ArticleReader.css";
 interface ArticleReaderProps {
   article: AnonymizedArticle;
   onBack: () => void;
-  flagStore: FlagStore;
 }
 
 interface PopoverState {
@@ -18,14 +17,16 @@ interface PopoverState {
   left: number;
 }
 
-let flagIdCounter = 0;
-
-export function ArticleReader({ article, onBack, flagStore }: ArticleReaderProps) {
+export function ArticleReader({ article, onBack }: ArticleReaderProps) {
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const [flagVersion, setFlagVersion] = useState(0);
+  const [flags, setFlags] = useState<PropagandaFlag[]>([]);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  const flags = flagStore.getByArticle(article.id);
+  useEffect(() => {
+    fetchFlags(article.id)
+      .then(setFlags)
+      .catch(() => setFlags([]));
+  }, [article.id]);
 
   const handleMouseUp = () => {
     const info = getSelectionInfo();
@@ -41,21 +42,21 @@ export function ArticleReader({ article, onBack, flagStore }: ArticleReaderProps
     });
   };
 
-  const handleSubmit = (explanation: string) => {
+  const handleSubmit = async (explanation: string) => {
     if (!popover) return;
 
-    flagIdCounter++;
-    flagStore.add({
-      id: `flag-${Date.now()}-${flagIdCounter}`,
-      articleId: article.id,
-      highlightedText: popover.text,
-      explanation,
-      timestamp: Date.now(),
-    });
+    try {
+      const newFlag = await createFlag(article.id, {
+        highlightedText: popover.text,
+        explanation,
+      });
+      setFlags((prev) => [...prev, newFlag]);
+    } catch {
+      // Flag creation failed — silently ignore
+    }
 
     window.getSelection()?.removeAllRanges();
     setPopover(null);
-    setFlagVersion((v) => v + 1);
   };
 
   const handleCancel = () => {
@@ -83,7 +84,6 @@ export function ArticleReader({ article, onBack, flagStore }: ArticleReaderProps
         className="article-reader__body"
         ref={bodyRef}
         onMouseUp={handleMouseUp}
-        data-flag-version={flagVersion}
       >
         {article.body.map((paragraph, index) => (
           <HighlightedParagraph

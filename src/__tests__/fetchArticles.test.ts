@@ -1,9 +1,6 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
 import { runFetchArticles } from "../scripts/fetchArticles";
 import * as RssFetcher from "../services/RssFetcher";
-import { Article } from "../types";
+import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
 
 jest.mock("../services/RssFetcher");
 const mockFetchFeed = RssFetcher.fetchFeed as jest.MockedFunction<typeof RssFetcher.fetchFeed>;
@@ -20,26 +17,19 @@ const rssXml = (title: string, link: string) => `<?xml version="1.0"?>
   </rss>`;
 
 describe("runFetchArticles", () => {
-  let tmpDir: string;
-  let outPath: string;
+  let repo: InMemoryArticleRepository;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "fetch-articles-"));
-    outPath = path.join(tmpDir, "articles.json");
+    repo = new InMemoryArticleRepository();
     mockFetchFeed.mockReset();
   });
 
-  afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  });
-
-  it("fetches all sources and saves articles to the output path", async () => {
+  it("fetches all sources and saves articles to the repository", async () => {
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Test Article", "https://example.com/1") });
 
-    const result = await runFetchArticles(outPath);
+    const result = await runFetchArticles(repo);
 
-    expect(fs.existsSync(outPath)).toBe(true);
-    const articles = JSON.parse(fs.readFileSync(outPath, "utf-8"));
+    const articles = await repo.findAll();
     expect(articles.length).toBeGreaterThan(0);
     expect(result.failedSources).toHaveLength(0);
   });
@@ -54,17 +44,17 @@ describe("runFetchArticles", () => {
       return { ok: true, xml: rssXml("Good Article", "https://example.com/good") };
     });
 
-    const result = await runFetchArticles(outPath);
+    const result = await runFetchArticles(repo);
 
     expect(result.failedSources.length).toBeGreaterThan(0);
-    const articles = JSON.parse(fs.readFileSync(outPath, "utf-8"));
+    const articles = await repo.findAll();
     expect(articles.length).toBeGreaterThan(0);
   });
 
   it("reports all sources as failed when every fetch fails", async () => {
     mockFetchFeed.mockResolvedValue({ ok: false, error: "All down" });
 
-    const result = await runFetchArticles(outPath);
+    const result = await runFetchArticles(repo);
 
     expect(result.failedSources).toHaveLength(8);
     expect(result.totalArticles).toBe(0);
@@ -73,38 +63,37 @@ describe("runFetchArticles", () => {
   it("deduplicates articles by ID across runs", async () => {
     // First run
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Same Article", "https://example.com/same") });
-    await runFetchArticles(outPath);
+    await runFetchArticles(repo);
 
-    const firstRun = JSON.parse(fs.readFileSync(outPath, "utf-8"));
-    const firstCount = firstRun.length;
+    const firstCount = await repo.count();
 
     // Second run — same articles
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Same Article", "https://example.com/same") });
-    await runFetchArticles(outPath);
+    await runFetchArticles(repo);
 
-    const secondRun = JSON.parse(fs.readFileSync(outPath, "utf-8"));
-    expect(secondRun.length).toBe(firstCount);
+    const secondCount = await repo.count();
+    expect(secondCount).toBe(firstCount);
   });
 
   it("merges new articles with existing ones", async () => {
     // First run
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("First Article", "https://example.com/first") });
-    await runFetchArticles(outPath);
+    await runFetchArticles(repo);
 
-    const firstCount = JSON.parse(fs.readFileSync(outPath, "utf-8")).length;
+    const firstCount = await repo.count();
 
     // Second run with different articles
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Second Article", "https://example.com/second") });
-    await runFetchArticles(outPath);
+    await runFetchArticles(repo);
 
-    const merged = JSON.parse(fs.readFileSync(outPath, "utf-8"));
-    expect(merged.length).toBeGreaterThan(firstCount);
+    const secondCount = await repo.count();
+    expect(secondCount).toBeGreaterThan(firstCount);
   });
 
   it("returns summary with total articles and failed sources", async () => {
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Test", "https://example.com/t") });
 
-    const result = await runFetchArticles(outPath);
+    const result = await runFetchArticles(repo);
 
     expect(typeof result.totalArticles).toBe("number");
     expect(Array.isArray(result.failedSources)).toBe(true);

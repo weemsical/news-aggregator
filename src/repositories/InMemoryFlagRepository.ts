@@ -1,9 +1,10 @@
 import { PropagandaFlag } from "../types";
+import { FlagRepository } from "./FlagRepository";
 
-export class FlagStore {
+export class InMemoryFlagRepository implements FlagRepository {
   private flags: Map<string, PropagandaFlag> = new Map();
 
-  add(flag: PropagandaFlag): void {
+  async save(flag: PropagandaFlag): Promise<void> {
     if (!flag.highlightedText.trim()) {
       throw new Error("highlightedText must not be empty");
     }
@@ -15,17 +16,19 @@ export class FlagStore {
     }
   }
 
-  getAll(): PropagandaFlag[] {
+  async findAll(): Promise<PropagandaFlag[]> {
     return Array.from(this.flags.values()).sort(
       (a, b) => a.timestamp - b.timestamp
     );
   }
 
-  getByArticle(articleId: string): PropagandaFlag[] {
-    return this.getAll().filter((f) => f.articleId === articleId);
+  async findByArticle(articleId: string): Promise<PropagandaFlag[]> {
+    return Array.from(this.flags.values())
+      .filter((f) => f.articleId === articleId)
+      .sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  get count(): number {
+  async count(): Promise<number> {
     return this.flags.size;
   }
 }

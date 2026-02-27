@@ -1,8 +1,7 @@
-import * as path from "path";
 import { feedSources } from "../data/feedSources";
 import { fetchFeed } from "../services/RssFetcher";
 import { parseRssFeed } from "../services/RssParser";
-import { saveArticles, loadArticles } from "../services/ArticlePersistence";
+import { ArticleRepository } from "../repositories/ArticleRepository";
 import { Article } from "../types";
 
 export interface FetchResult {
@@ -10,9 +9,7 @@ export interface FetchResult {
   failedSources: string[];
 }
 
-export async function runFetchArticles(outputPath: string): Promise<FetchResult> {
-  const existing = loadArticles(outputPath);
-  const existingIds = new Set(existing.map((a) => a.id));
+export async function runFetchArticles(repo: ArticleRepository): Promise<FetchResult> {
   const failedSources: string[] = [];
   const newArticles: Article[] = [];
 
@@ -26,18 +23,21 @@ export async function runFetchArticles(outputPath: string): Promise<FetchResult>
 
     const articles = parseRssFeed(result.xml, source);
     for (const article of articles) {
-      if (!existingIds.has(article.id)) {
+      const alreadyExists = await repo.exists(article.id);
+      if (!alreadyExists) {
         newArticles.push(article);
-        existingIds.add(article.id);
       }
     }
   }
 
-  const merged = [...existing, ...newArticles];
-  saveArticles(merged, outputPath);
+  if (newArticles.length > 0) {
+    await repo.saveBatch(newArticles);
+  }
+
+  const totalArticles = await repo.count();
 
   return {
-    totalArticles: merged.length,
+    totalArticles,
     failedSources,
   };
 }
@@ -45,8 +45,10 @@ export async function runFetchArticles(outputPath: string): Promise<FetchResult>
 // CLI entry point
 const isDirectRun = require.main === module;
 if (isDirectRun) {
-  const outputPath = path.resolve(__dirname, "../../public/articles.json");
-  runFetchArticles(outputPath).then((result) => {
+  const { createRepositories } = require("../repositories/createRepositories");
+  const repos = createRepositories();
+
+  runFetchArticles(repos.articles).then((result) => {
     console.log(`Fetched ${result.totalArticles} total articles.`);
     if (result.failedSources.length > 0) {
       console.error(`Failed sources: ${result.failedSources.join(", ")}`);
