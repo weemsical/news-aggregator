@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { AnonymizedArticle, PropagandaFlag } from "../types";
 import { fetchFlags, createFlag } from "./apiClient";
+import { useAuth } from "./AuthContext";
+import { FlagToggle, FlagView } from "./FlagToggle";
 import { HighlightedParagraph } from "./HighlightedParagraph";
 import { FlagPopover } from "./FlagPopover";
 import { getSelectionInfo } from "./getSelectionInfo";
@@ -18,8 +20,10 @@ interface PopoverState {
 }
 
 export function ArticleReader({ article, onBack }: ArticleReaderProps) {
+  const { user } = useAuth();
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const [flags, setFlags] = useState<PropagandaFlag[]>([]);
+  const [flagView, setFlagView] = useState<FlagView>("all");
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,7 +32,15 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
       .catch(() => setFlags([]));
   }, [article.id]);
 
+  const visibleFlags = useMemo(() => {
+    if (!user) return [];
+    if (flagView === "none") return [];
+    if (flagView === "mine") return flags.filter((f) => f.userId === user.id);
+    return flags;
+  }, [flags, flagView, user]);
+
   const handleMouseUp = () => {
+    if (!user) return;
     const info = getSelectionInfo();
     if (!info || !bodyRef.current) {
       return;
@@ -80,6 +92,9 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
           </span>
         ))}
       </div>
+      {user && (
+        <FlagToggle value={flagView} onChange={setFlagView} />
+      )}
       <div
         className="article-reader__body"
         ref={bodyRef}
@@ -89,7 +104,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
           <HighlightedParagraph
             key={index}
             text={paragraph}
-            flags={flags.map((f) => ({ highlightedText: f.highlightedText, id: f.id }))}
+            flags={visibleFlags.map((f) => ({ highlightedText: f.highlightedText, id: f.id }))}
           />
         ))}
         {popover && (

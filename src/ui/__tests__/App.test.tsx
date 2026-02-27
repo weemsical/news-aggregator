@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../App";
+import * as apiClient from "../apiClient";
 
 jest.mock("../articleData", () => ({
   loadArticles: jest.fn().mockResolvedValue([
@@ -21,6 +22,20 @@ jest.mock("../articleData", () => ({
     },
   ]),
 }));
+
+jest.mock("../apiClient", () => ({
+  ...jest.requireActual("../apiClient"),
+  fetchCurrentUser: jest.fn(),
+  fetchFlags: jest.fn().mockResolvedValue([]),
+}));
+
+const mockFetchCurrentUser = apiClient.fetchCurrentUser as jest.MockedFunction<
+  typeof apiClient.fetchCurrentUser
+>;
+
+beforeEach(() => {
+  mockFetchCurrentUser.mockResolvedValue(null);
+});
 
 describe("App", () => {
   it("renders the app heading", async () => {
@@ -67,5 +82,22 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: /back/i }));
     expect(screen.getByText("Mock Article One")).toBeInTheDocument();
     expect(screen.getByText("Mock Article Two")).toBeInTheDocument();
+  });
+
+  it("shows Log In button when not authenticated", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText("Mock Article One")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Log In" })).toBeInTheDocument();
+  });
+
+  it("shows user email and Log Out when authenticated", async () => {
+    mockFetchCurrentUser.mockResolvedValue({ id: "u1", email: "test@example.com" });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText("test@example.com")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Log Out" })).toBeInTheDocument();
   });
 });

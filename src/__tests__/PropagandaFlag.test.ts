@@ -27,6 +27,7 @@ describe("PropagandaFlag", () => {
     const flag: PropagandaFlag = {
       id: "flag-1",
       articleId: sampleArticle.id,
+      userId: "user-1",
       highlightedText:
         "accused the committee of leveraging testimony to redirect attention",
       explanation:
@@ -45,6 +46,7 @@ describe("PropagandaFlag", () => {
     const flag: PropagandaFlag = {
       id: "flag-2",
       articleId: sampleArticle.id,
+      userId: "user-1",
       highlightedText:
         "a genuine committee would focus on systemic reforms rather than personal appearances",
       explanation:
@@ -60,6 +62,7 @@ describe("PropagandaFlag", () => {
       {
         id: "flag-3",
         articleId: sampleArticle.id,
+        userId: "user-1",
         highlightedText: "accused the committee of leveraging testimony",
         explanation: "Loaded language — 'leveraging' implies manipulation",
         timestamp: 1740000060000,
@@ -67,6 +70,7 @@ describe("PropagandaFlag", () => {
       {
         id: "flag-4",
         articleId: sampleArticle.id,
+        userId: "user-1",
         highlightedText:
           "maintained having no personal encounters with the subject",
         explanation:
@@ -87,6 +91,7 @@ describe("PropagandaFlag", () => {
     const flag: PropagandaFlag = {
       id: "flag-5",
       articleId: sampleArticle.id,
+      userId: "user-1",
       highlightedText: "some highlighted text",
       explanation: "User must explain why this is propaganda",
       timestamp: Date.now(),

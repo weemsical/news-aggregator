@@ -68,6 +68,7 @@ describe("Seed Articles", () => {
     await flagRepo.save({
       id: "seed-flag-1",
       articleId: article.id,
+      userId: "user-1",
       highlightedText: article.body[0].substring(0, 60),
       explanation: "Testing propaganda flagging with real article content",
       timestamp: Date.now(),
@@ -85,6 +86,7 @@ describe("Seed Articles", () => {
       await flagRepo.save({
         id: `multi-flag-${i}`,
         articleId: article.id,
+        userId: "user-1",
         highlightedText: article.body[0].substring(0, 60),
         explanation: `Flagged passage from article ${i + 1}`,
         timestamp: Date.now() + i,

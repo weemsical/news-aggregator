@@ -1,6 +1,7 @@
 import { createRepositories } from "../repositories/createRepositories";
 import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
 import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
+import { InMemoryUserRepository } from "../repositories/InMemoryUserRepository";
 
 describe("createRepositories", () => {
   const originalEnv = process.env.DATABASE_URL;
@@ -15,15 +16,17 @@ describe("createRepositories", () => {
 
   it("returns InMemory implementations when DATABASE_URL is not set", () => {
     delete process.env.DATABASE_URL;
-    const { articles, flags } = createRepositories();
+    const { articles, flags, users } = createRepositories();
     expect(articles).toBeInstanceOf(InMemoryArticleRepository);
     expect(flags).toBeInstanceOf(InMemoryFlagRepository);
+    expect(users).toBeInstanceOf(InMemoryUserRepository);
   });
 
   it("returns InMemory implementations when DATABASE_URL is empty", () => {
     process.env.DATABASE_URL = "";
-    const { articles, flags } = createRepositories();
+    const { articles, flags, users } = createRepositories();
     expect(articles).toBeInstanceOf(InMemoryArticleRepository);
     expect(flags).toBeInstanceOf(InMemoryFlagRepository);
+    expect(users).toBeInstanceOf(InMemoryUserRepository);
   });
 });

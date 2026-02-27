@@ -3,12 +3,16 @@ import { AnonymizedArticle } from "../types";
 import { loadArticles } from "./articleData";
 import { ArticleList } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthForm } from "./AuthForm";
 import "./App.css";
 
-export function App() {
+function AppContent() {
+  const { user, loading: authLoading, logout } = useAuth();
   const [articles, setArticles] = useState<AnonymizedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+  const [showAuthForm, setShowAuthForm] = useState(false);
 
   useEffect(() => {
     loadArticles().then((loaded) => {
@@ -24,7 +28,29 @@ export function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <h1>I Call BullShit</h1>
+        <div className="app__header-top">
+          <h1>I Call BullShit</h1>
+          <div className="app__auth">
+            {authLoading ? null : user ? (
+              <>
+                <span className="app__user-email">{user.email}</span>
+                <button
+                  className="app__auth-btn"
+                  onClick={() => logout()}
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <button
+                className="app__auth-btn"
+                onClick={() => setShowAuthForm(true)}
+              >
+                Log In
+              </button>
+            )}
+          </div>
+        </div>
         <p className="app__tagline">Read the news. Spot the spin.</p>
       </header>
       <main className="app__main">
@@ -42,6 +68,15 @@ export function App() {
           />
         )}
       </main>
+      {showAuthForm && <AuthForm onClose={() => setShowAuthForm(false)} />}
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

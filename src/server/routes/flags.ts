@@ -1,6 +1,7 @@
 import { Router, Request } from "express";
 import { ArticleRepository } from "../../repositories/ArticleRepository";
 import { FlagRepository } from "../../repositories/FlagRepository";
+import { requireAuth, optionalAuth } from "../middleware/requireAuth";
 
 let flagIdCounter = 0;
 
@@ -10,12 +11,20 @@ export function flagsRouter(
 ): Router {
   const router = Router({ mergeParams: true });
 
-  router.get("/", async (req: Request<{ id: string }>, res) => {
-    const flags = await flagRepo.findByArticle(req.params.id);
-    res.json(flags);
+  router.get("/", optionalAuth, async (req: Request<{ id: string }>, res) => {
+    const articleId = req.params.id;
+    const userId = req.query.userId as string | undefined;
+
+    if (userId) {
+      const flags = await flagRepo.findByArticleAndUser(articleId, userId);
+      res.json(flags);
+    } else {
+      const flags = await flagRepo.findByArticle(articleId);
+      res.json(flags);
+    }
   });
 
-  router.post("/", async (req: Request<{ id: string }>, res) => {
+  router.post("/", requireAuth, async (req: Request<{ id: string }>, res) => {
     const articleId = req.params.id;
     const exists = await articleRepo.exists(articleId);
     if (!exists) {
@@ -37,6 +46,7 @@ export function flagsRouter(
     const flag = {
       id: `flag-${Date.now()}-${flagIdCounter}`,
       articleId,
+      userId: req.user!.userId,
       highlightedText: String(highlightedText),
       explanation: String(explanation),
       timestamp: Date.now(),

@@ -28,6 +28,12 @@ export class InMemoryFlagRepository implements FlagRepository {
       .sort((a, b) => a.timestamp - b.timestamp);
   }
 
+  async findByArticleAndUser(articleId: string, userId: string): Promise<PropagandaFlag[]> {
+    return Array.from(this.flags.values())
+      .filter((f) => f.articleId === articleId && f.userId === userId)
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
+
   async count(): Promise<number> {
     return this.flags.size;
   }

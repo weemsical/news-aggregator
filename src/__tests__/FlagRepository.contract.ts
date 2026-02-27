@@ -10,6 +10,7 @@ export function flagRepositoryContractTests(
   const makeFlag = (overrides: Partial<PropagandaFlag> = {}): PropagandaFlag => ({
     id: "flag-1",
     articleId: "article-1",
+    userId: "user-1",
     highlightedText: "accused the committee of leveraging testimony",
     explanation: "Loaded language implies manipulation without evidence",
     timestamp: 1740000060000,
@@ -86,5 +87,21 @@ export function flagRepositoryContractTests(
     expect(await repo.count()).toBe(0);
     await repo.save(makeFlag());
     expect(await repo.count()).toBe(1);
+  });
+
+  it("finds flags by article and user", async () => {
+    await repo.save(makeFlag({ id: "f1", articleId: "article-1", userId: "user-1" }));
+    await repo.save(makeFlag({ id: "f2", articleId: "article-1", userId: "user-2" }));
+    await repo.save(makeFlag({ id: "f3", articleId: "article-2", userId: "user-1" }));
+
+    const result = await repo.findByArticleAndUser("article-1", "user-1");
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("f1");
+  });
+
+  it("returns empty array when user has no flags for article", async () => {
+    await repo.save(makeFlag({ id: "f1", articleId: "article-1", userId: "user-1" }));
+    const result = await repo.findByArticleAndUser("article-1", "user-99");
+    expect(result).toEqual([]);
   });
 }
