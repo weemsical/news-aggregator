@@ -13,5 +13,7 @@ export async function loadArticles(): Promise<AnonymizedArticle[]> {
     // API not available — fall through to seed data
   }
 
-  return seedArticles.map(anonymize);
+  return seedArticles
+    .map(anonymize)
+    .sort((a, b) => b.fetchedAt - a.fetchedAt);
 }

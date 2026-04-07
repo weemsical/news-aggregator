@@ -6,12 +6,13 @@ import { ArticleList } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
 import { SourceLeaderboard } from "./SourceLeaderboard";
 import { AdminPanel } from "./AdminPanel";
+import { HowItWorks } from "./HowItWorks";
 import { DateFilter } from "./DateFilter";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { AuthForm } from "./AuthForm";
 import "./App.css";
 
-type View = "articles" | "leaderboard" | "admin";
+type View = "articles" | "leaderboard" | "how-it-works" | "admin";
 
 function AppContent() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -101,6 +102,12 @@ function AppContent() {
           >
             Leaderboard
           </button>
+          <button
+            className={`app__nav-btn${view === "how-it-works" ? " app__nav-btn--active" : ""}`}
+            onClick={() => setView("how-it-works")}
+          >
+            How It Works
+          </button>
           {user?.isAdmin && (
             <button
               className={`app__nav-btn${view === "admin" ? " app__nav-btn--active" : ""}`}
@@ -114,6 +121,8 @@ function AppContent() {
       <main className="app__main">
         {view === "admin" ? (
           <AdminPanel />
+        ) : view === "how-it-works" ? (
+          <HowItWorks />
         ) : view === "leaderboard" ? (
           <SourceLeaderboard entries={leaderboard} />
         ) : loading ? (

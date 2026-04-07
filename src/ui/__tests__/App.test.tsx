@@ -112,13 +112,28 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Log Out" })).toBeInTheDocument();
   });
 
-  it("shows Articles and Leaderboard nav buttons", async () => {
+  it("shows Articles, Leaderboard, and How It Works nav buttons", async () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.getByText("Mock Article One")).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Articles" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How It Works" })).toBeInTheDocument();
+  });
+
+  it("switches to How It Works view when clicked", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText("Mock Article One")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "How It Works" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("What is this?")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Mock Article One")).not.toBeInTheDocument();
   });
 
   it("switches to leaderboard view when Leaderboard is clicked", async () => {
