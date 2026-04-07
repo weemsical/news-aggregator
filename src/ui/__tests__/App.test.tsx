@@ -7,18 +7,24 @@ jest.mock("../articleData", () => ({
   loadArticles: jest.fn().mockResolvedValue([
     {
       id: "mock-1",
+      rawArticleId: "mock-1",
       title: "Mock Article One",
       subtitle: "Mock subtitle",
       body: ["Paragraph A.", "Paragraph B.", "Paragraph C."],
       sourceTags: ["testing"],
       fetchedAt: 1738000000000,
+      reviewStatus: "approved",
+      propagandaScore: 0,
     },
     {
       id: "mock-2",
+      rawArticleId: "mock-2",
       title: "Mock Article Two",
       body: ["Content here."],
       sourceTags: ["mock"],
       fetchedAt: 1738100000000,
+      reviewStatus: "approved",
+      propagandaScore: 0,
     },
   ]),
 }));
@@ -26,7 +32,7 @@ jest.mock("../articleData", () => ({
 jest.mock("../apiClient", () => ({
   ...jest.requireActual("../apiClient"),
   fetchCurrentUser: jest.fn(),
-  fetchFlags: jest.fn().mockResolvedValue([]),
+  fetchHighlights: jest.fn().mockResolvedValue([]),
   fetchLeaderboard: jest.fn().mockResolvedValue([]),
   fetchAdminFeedSources: jest.fn().mockResolvedValue([]),
 }));

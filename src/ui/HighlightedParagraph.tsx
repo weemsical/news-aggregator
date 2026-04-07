@@ -1,20 +1,22 @@
-import { splitByHighlights } from "./highlightText";
+import { splitByOffsets } from "./highlightText";
 
-interface FlagRef {
-  highlightedText: string;
+interface HighlightRef {
   id: string;
+  startOffset: number;
+  endOffset: number;
 }
 
 interface HighlightedParagraphProps {
   text: string;
-  flags: FlagRef[];
+  paragraphIndex: number;
+  highlights: HighlightRef[];
 }
 
-export function HighlightedParagraph({ text, flags }: HighlightedParagraphProps) {
-  const segments = splitByHighlights(text, flags);
+export function HighlightedParagraph({ text, paragraphIndex, highlights }: HighlightedParagraphProps) {
+  const segments = splitByOffsets(text, highlights);
 
   return (
-    <p>
+    <p data-paragraph-index={paragraphIndex}>
       {segments.map((seg, i) =>
         seg.highlighted ? (
           <mark key={i} className="article-reader__highlight">

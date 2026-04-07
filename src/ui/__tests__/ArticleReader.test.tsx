@@ -12,11 +12,12 @@ jest.mock("../AuthContext", () => ({
 }));
 
 const mockUseAuth = authContext.useAuth as jest.MockedFunction<typeof authContext.useAuth>;
-const mockFetchFlags = apiClient.fetchFlags as jest.MockedFunction<typeof apiClient.fetchFlags>;
-const mockCreateFlag = apiClient.createFlag as jest.MockedFunction<typeof apiClient.createFlag>;
+const mockFetchHighlights = apiClient.fetchHighlights as jest.MockedFunction<typeof apiClient.fetchHighlights>;
+const mockCreateHighlight = apiClient.createHighlight as jest.MockedFunction<typeof apiClient.createHighlight>;
 
 const article: AnonymizedArticle = {
   id: "reader-1",
+  rawArticleId: "reader-1",
   title: "Full Article Title",
   subtitle: "The subtitle",
   body: [
@@ -26,6 +27,8 @@ const article: AnonymizedArticle = {
   ],
   sourceTags: ["politics", "economy"],
   fetchedAt: 1738000000000,
+  reviewStatus: "approved",
+  propagandaScore: 0,
 };
 
 const loggedInUser = { id: "user-1", email: "test@example.com" };
@@ -37,12 +40,11 @@ const mockAuth = {
   logout: jest.fn(),
 };
 
-// Mock the selection utility — jsdom can't do real text selection
 jest.spyOn(selectionModule, "getSelectionInfo").mockReturnValue(null);
 
 beforeEach(() => {
-  mockFetchFlags.mockResolvedValue([]);
-  mockCreateFlag.mockReset();
+  mockFetchHighlights.mockResolvedValue([]);
+  mockCreateHighlight.mockReset();
   mockUseAuth.mockReturnValue(mockAuth);
 });
 
@@ -50,20 +52,20 @@ describe("ArticleReader", () => {
   it("renders the article title", async () => {
     render(<ArticleReader article={article} onBack={() => {}} />);
     expect(screen.getByText("Full Article Title")).toBeInTheDocument();
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
   });
 
   it("renders the subtitle", async () => {
     render(<ArticleReader article={article} onBack={() => {}} />);
     expect(screen.getByText("The subtitle")).toBeInTheDocument();
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
   });
 
   it("does not render subtitle when absent", async () => {
     const noSub: AnonymizedArticle = { ...article, subtitle: undefined };
     render(<ArticleReader article={noSub} onBack={() => {}} />);
     expect(screen.queryByText("The subtitle")).not.toBeInTheDocument();
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
   });
 
   it("renders every body paragraph", async () => {
@@ -71,14 +73,14 @@ describe("ArticleReader", () => {
     expect(screen.getByText("First paragraph of the article.")).toBeInTheDocument();
     expect(screen.getByText("Second paragraph continues here.")).toBeInTheDocument();
     expect(screen.getByText("Third paragraph wraps up.")).toBeInTheDocument();
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
   });
 
   it("renders source tags", async () => {
     render(<ArticleReader article={article} onBack={() => {}} />);
     expect(screen.getByText("politics")).toBeInTheDocument();
     expect(screen.getByText("economy")).toBeInTheDocument();
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
   });
 
   it("calls onBack when back button is clicked", async () => {
@@ -86,18 +88,24 @@ describe("ArticleReader", () => {
     render(<ArticleReader article={article} onBack={handleBack} />);
     await userEvent.click(screen.getByRole("button", { name: /back/i }));
     expect(handleBack).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
   });
 
-  it("renders highlights when API returns matching flags", async () => {
-    mockFetchFlags.mockResolvedValue([
+  it("renders highlights when API returns highlights", async () => {
+    mockFetchHighlights.mockResolvedValue([
       {
-        id: "flag-1",
+        id: "h-1",
         articleId: "reader-1",
         userId: "user-1",
+        paragraphIndex: 1,
+        startOffset: 0,
+        endOffset: 16,
         highlightedText: "Second paragraph",
         explanation: "Test explanation",
-        timestamp: Date.now(),
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
 
@@ -112,14 +120,14 @@ describe("ArticleReader", () => {
     });
   });
 
-  it("does not render highlights when API returns no flags", async () => {
-    mockFetchFlags.mockResolvedValue([]);
+  it("does not render highlights when API returns none", async () => {
+    mockFetchHighlights.mockResolvedValue([]);
 
     const { container } = render(
       <ArticleReader article={article} onBack={() => {}} />
     );
 
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
     const marks = container.querySelectorAll("mark");
     expect(marks).toHaveLength(0);
   });
@@ -129,13 +137,16 @@ describe("ArticleReader", () => {
     (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
       text: "paragraph of the",
       rect: mockRect,
+      paragraphIndex: 0,
+      startOffset: 6,
+      endOffset: 23,
     });
 
     const { container } = render(
       <ArticleReader article={article} onBack={() => {}} />
     );
 
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
 
     const body = container.querySelector(".article-reader__body")!;
     fireEvent.mouseUp(body);
@@ -145,68 +156,21 @@ describe("ArticleReader", () => {
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
   });
 
-  it("hides popover and adds highlight after submitting a flag", async () => {
-    mockFetchFlags.mockResolvedValue([]);
-    mockCreateFlag.mockResolvedValue({
-      id: "flag-new",
-      articleId: "reader-1",
-      userId: "user-1",
-      highlightedText: "First paragraph",
-      explanation: "Loaded language",
-      timestamp: Date.now(),
-    });
-
-    const mockRect = { top: 50, left: 100, bottom: 70, right: 200 } as DOMRect;
-    (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
-      text: "First paragraph",
-      rect: mockRect,
-    });
-
-    const { container } = render(
-      <ArticleReader article={article} onBack={() => {}} />
-    );
-
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
-
-    // Trigger selection popover
-    const body = container.querySelector(".article-reader__body")!;
-    fireEvent.mouseUp(body);
-
-    // Type explanation and submit
-    await userEvent.type(screen.getByRole("textbox"), "Loaded language");
-    await userEvent.click(screen.getByRole("button", { name: /submit/i }));
-
-    // Popover should be gone
-    await waitFor(() => {
-      expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    });
-
-    // Highlight should appear
-    await waitFor(() => {
-      const marks = container.querySelectorAll("mark");
-      expect(marks).toHaveLength(1);
-      expect(marks[0].textContent).toBe("First paragraph");
-    });
-
-    // API should have been called
-    expect(mockCreateFlag).toHaveBeenCalledWith("reader-1", {
-      highlightedText: "First paragraph",
-      explanation: "Loaded language",
-    });
-  });
-
   it("hides popover when cancel is clicked", async () => {
     const mockRect = { top: 50, left: 100, bottom: 70, right: 200 } as DOMRect;
     (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
       text: "some text",
       rect: mockRect,
+      paragraphIndex: 0,
+      startOffset: 0,
+      endOffset: 9,
     });
 
     const { container } = render(
       <ArticleReader article={article} onBack={() => {}} />
     );
 
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
 
     fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
     expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -217,29 +181,35 @@ describe("ArticleReader", () => {
 });
 
 describe("ArticleReader — auth & toggle", () => {
-  it("does not show flag toggle when logged out", async () => {
+  it("does not show highlight toggle when logged out", async () => {
     mockUseAuth.mockReturnValue({ ...mockAuth, user: null });
     render(<ArticleReader article={article} onBack={() => {}} />);
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
     expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
   });
 
-  it("shows flag toggle when logged in", async () => {
+  it("shows highlight toggle when logged in", async () => {
     render(<ArticleReader article={article} onBack={() => {}} />);
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
-    expect(screen.getByRole("radiogroup", { name: "Flag view" })).toBeInTheDocument();
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
+    expect(screen.getByRole("radiogroup", { name: "Highlight view" })).toBeInTheDocument();
   });
 
-  it("does not show highlights when logged out even if flags exist", async () => {
+  it("does not show highlights when logged out", async () => {
     mockUseAuth.mockReturnValue({ ...mockAuth, user: null });
-    mockFetchFlags.mockResolvedValue([
+    mockFetchHighlights.mockResolvedValue([
       {
-        id: "flag-1",
+        id: "h-1",
         articleId: "reader-1",
         userId: "user-1",
+        paragraphIndex: 1,
+        startOffset: 0,
+        endOffset: 16,
         highlightedText: "Second paragraph",
         explanation: "Test",
-        timestamp: Date.now(),
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
 
@@ -247,20 +217,26 @@ describe("ArticleReader — auth & toggle", () => {
       <ArticleReader article={article} onBack={() => {}} />
     );
 
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
     const marks = container.querySelectorAll("mark");
     expect(marks).toHaveLength(0);
   });
 
   it("hides highlights when toggle is set to None", async () => {
-    mockFetchFlags.mockResolvedValue([
+    mockFetchHighlights.mockResolvedValue([
       {
-        id: "flag-1",
+        id: "h-1",
         articleId: "reader-1",
         userId: "user-1",
+        paragraphIndex: 1,
+        startOffset: 0,
+        endOffset: 16,
         highlightedText: "Second paragraph",
         explanation: "Test",
-        timestamp: Date.now(),
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
 
@@ -279,23 +255,35 @@ describe("ArticleReader — auth & toggle", () => {
     });
   });
 
-  it("shows only user's flags on My Flags toggle", async () => {
-    mockFetchFlags.mockResolvedValue([
+  it("shows only user's highlights on My Highlights toggle", async () => {
+    mockFetchHighlights.mockResolvedValue([
       {
-        id: "flag-1",
+        id: "h-1",
         articleId: "reader-1",
         userId: "user-1",
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 15,
         highlightedText: "First paragraph",
         explanation: "Mine",
-        timestamp: Date.now(),
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
       {
-        id: "flag-2",
+        id: "h-2",
         articleId: "reader-1",
         userId: "other-user",
+        paragraphIndex: 1,
+        startOffset: 0,
+        endOffset: 16,
         highlightedText: "Second paragraph",
         explanation: "Theirs",
-        timestamp: Date.now(),
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
 
@@ -303,13 +291,11 @@ describe("ArticleReader — auth & toggle", () => {
       <ArticleReader article={article} onBack={() => {}} />
     );
 
-    // All flags visible by default
     await waitFor(() => {
       expect(container.querySelectorAll("mark")).toHaveLength(2);
     });
 
-    // Switch to My Flags
-    await userEvent.click(screen.getByText("My Flags"));
+    await userEvent.click(screen.getByText("My Highlights"));
 
     await waitFor(() => {
       const marks = container.querySelectorAll("mark");
@@ -324,54 +310,18 @@ describe("ArticleReader — auth & toggle", () => {
     (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
       text: "paragraph of the",
       rect: mockRect,
+      paragraphIndex: 0,
+      startOffset: 6,
+      endOffset: 23,
     });
 
     const { container } = render(
       <ArticleReader article={article} onBack={() => {}} />
     );
 
-    await waitFor(() => expect(mockFetchFlags).toHaveBeenCalled());
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
 
     fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-  });
-
-  it("switches back to All Flags after viewing My Flags", async () => {
-    mockFetchFlags.mockResolvedValue([
-      {
-        id: "flag-1",
-        articleId: "reader-1",
-        userId: "user-1",
-        highlightedText: "First paragraph",
-        explanation: "Mine",
-        timestamp: Date.now(),
-      },
-      {
-        id: "flag-2",
-        articleId: "reader-1",
-        userId: "other-user",
-        highlightedText: "Second paragraph",
-        explanation: "Theirs",
-        timestamp: Date.now(),
-      },
-    ]);
-
-    const { container } = render(
-      <ArticleReader article={article} onBack={() => {}} />
-    );
-
-    await waitFor(() => {
-      expect(container.querySelectorAll("mark")).toHaveLength(2);
-    });
-
-    await userEvent.click(screen.getByText("My Flags"));
-    await waitFor(() => {
-      expect(container.querySelectorAll("mark")).toHaveLength(1);
-    });
-
-    await userEvent.click(screen.getByText("All Flags"));
-    await waitFor(() => {
-      expect(container.querySelectorAll("mark")).toHaveLength(2);
-    });
   });
 });

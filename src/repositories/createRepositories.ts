@@ -1,41 +1,36 @@
 import { ArticleRepository } from "./ArticleRepository";
-import { FlagRepository } from "./FlagRepository";
+import { HighlightRepository } from "./HighlightRepository";
 import { UserRepository } from "./UserRepository";
 import { FeedSourceRepository } from "./FeedSourceRepository";
-import { InMemoryArticleRepository } from "./InMemoryArticleRepository";
-import { InMemoryFlagRepository } from "./InMemoryFlagRepository";
-import { InMemoryUserRepository } from "./InMemoryUserRepository";
-import { InMemoryFeedSourceRepository } from "./InMemoryFeedSourceRepository";
+import { RawArticleRepository } from "./RawArticleRepository";
 import { PostgresArticleRepository } from "./PostgresArticleRepository";
-import { PostgresFlagRepository } from "./PostgresFlagRepository";
+import { PostgresHighlightRepository } from "./PostgresHighlightRepository";
 import { PostgresUserRepository } from "./PostgresUserRepository";
 import { PostgresFeedSourceRepository } from "./PostgresFeedSourceRepository";
+import { PostgresRawArticleRepository } from "./PostgresRawArticleRepository";
 import { getPool } from "../db/pool";
 
 export interface Repositories {
   articles: ArticleRepository;
-  flags: FlagRepository;
+  highlights: HighlightRepository;
   users: UserRepository;
   feedSources: FeedSourceRepository;
+  rawArticles: RawArticleRepository;
 }
 
 export function createRepositories(): Repositories {
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (databaseUrl) {
-    const pool = getPool();
-    return {
-      articles: new PostgresArticleRepository(pool),
-      flags: new PostgresFlagRepository(pool),
-      users: new PostgresUserRepository(pool),
-      feedSources: new PostgresFeedSourceRepository(pool),
-    };
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL environment variable is required");
   }
 
+  const pool = getPool();
   return {
-    articles: new InMemoryArticleRepository(),
-    flags: new InMemoryFlagRepository(),
-    users: new InMemoryUserRepository(),
-    feedSources: new InMemoryFeedSourceRepository(),
+    articles: new PostgresArticleRepository(pool),
+    highlights: new PostgresHighlightRepository(pool),
+    users: new PostgresUserRepository(pool),
+    feedSources: new PostgresFeedSourceRepository(pool),
+    rawArticles: new PostgresRawArticleRepository(pool),
   };
 }

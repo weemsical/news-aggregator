@@ -1,17 +1,9 @@
 import request from "supertest";
-import { createApp } from "../server/app";
-import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
-import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
-import { InMemoryUserRepository } from "../repositories/InMemoryUserRepository";
-import { InMemoryFeedSourceRepository } from "../repositories/InMemoryFeedSourceRepository";
+import { buildTestApp } from "./helpers/buildTestApp";
 
 function buildApp() {
-  const articles = new InMemoryArticleRepository();
-  const flags = new InMemoryFlagRepository();
-  const users = new InMemoryUserRepository();
-  const feedSources = new InMemoryFeedSourceRepository();
-  const app = createApp({ articles, flags, users, feedSources });
-  return { app, articles, flags, users, feedSources };
+  const { app, articles, highlights, users, feedSources } = buildTestApp();
+  return { app, articles, highlights, users, feedSources };
 }
 
 async function signupAndGetCookie(
@@ -68,7 +60,7 @@ describe("GET /api/admin/feed-sources", () => {
       .set("Cookie", cookie);
 
     expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(8); // 8 static + 1 dynamic
+    expect(res.body.length).toBeGreaterThan(8);
     const custom = res.body.find(
       (s: any) => s.sourceId === "custom"
     );

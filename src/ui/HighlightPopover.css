@@ -1,4 +1,4 @@
-.flag-popover {
+.highlight-popover {
   position: absolute;
   z-index: 10;
   background: white;
@@ -9,7 +9,7 @@
   width: 280px;
 }
 
-.flag-popover__selected-text {
+.highlight-popover__selected-text {
   font-size: 0.85rem;
   color: #555;
   font-style: italic;
@@ -17,10 +17,10 @@
   padding: 0.5rem;
   background: #f9f9f9;
   border-radius: 4px;
-  border-left: 3px solid #e6a817;
+  border-left: 3px solid #4a90d9;
 }
 
-.flag-popover__textarea {
+.highlight-popover__textarea {
   width: 100%;
   min-height: 80px;
   border: 1px solid #ccc;
@@ -33,14 +33,14 @@
   box-sizing: border-box;
 }
 
-.flag-popover__actions {
+.highlight-popover__actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-.flag-popover__submit {
-  background: #e6a817;
+.highlight-popover__submit {
+  background: #4a90d9;
   color: white;
   border: none;
   border-radius: 4px;
@@ -49,11 +49,11 @@
   font-size: 0.85rem;
 }
 
-.flag-popover__submit:hover {
-  background: #d49a15;
+.highlight-popover__submit:hover {
+  background: #3a7bc8;
 }
 
-.flag-popover__cancel {
+.highlight-popover__cancel {
   background: none;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -63,6 +63,20 @@
   color: #666;
 }
 
-.flag-popover__cancel:hover {
+.highlight-popover__cancel:hover {
   border-color: #888;
+}
+
+.highlight-popover__delete {
+  background: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.highlight-popover__delete:hover {
+  background: #c9302c;
 }

@@ -1,10 +1,10 @@
 import { getAllFeedSources } from "../data/getAllFeedSources";
 import { feedSources } from "../data/feedSources";
-import { InMemoryFeedSourceRepository } from "../repositories/InMemoryFeedSourceRepository";
+import { TestInMemoryFeedSourceRepository } from "./helpers/TestInMemoryFeedSourceRepository";
 
 describe("getAllFeedSources", () => {
   it("returns static sources when DB is empty", async () => {
-    const repo = new InMemoryFeedSourceRepository();
+    const repo = new TestInMemoryFeedSourceRepository();
     const all = await getAllFeedSources(repo);
     expect(all).toHaveLength(feedSources.length);
     expect(all.map((s) => s.sourceId)).toEqual(
@@ -13,7 +13,7 @@ describe("getAllFeedSources", () => {
   });
 
   it("includes DB-only sources alongside static ones", async () => {
-    const repo = new InMemoryFeedSourceRepository();
+    const repo = new TestInMemoryFeedSourceRepository();
     await repo.save({
       sourceId: "custom-source",
       name: "Custom Source",
@@ -32,7 +32,7 @@ describe("getAllFeedSources", () => {
   });
 
   it("DB source overrides static source with same sourceId", async () => {
-    const repo = new InMemoryFeedSourceRepository();
+    const repo = new TestInMemoryFeedSourceRepository();
     await repo.save({
       sourceId: "fox-news",
       name: "Fox News (Custom URL)",
@@ -48,7 +48,7 @@ describe("getAllFeedSources", () => {
   });
 
   it("preserves all static sources when DB has no overlapping IDs", async () => {
-    const repo = new InMemoryFeedSourceRepository();
+    const repo = new TestInMemoryFeedSourceRepository();
     await repo.save({
       sourceId: "new-source",
       name: "New Source",

@@ -11,6 +11,9 @@ describe("anonymize", () => {
 
   const sampleArticle: Article = {
     id: "article-1",
+    rawArticleId: "article-1",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     title: "Senator Tells House Committee 'I Do Not Recall' Key Details",
     subtitle: "Politician testifies before oversight committee on Thursday",
     body: [
@@ -58,6 +61,9 @@ describe("anonymize", () => {
   it("should handle articles without a subtitle", () => {
     const noSubtitle: Article = {
       id: "article-2",
+      rawArticleId: "article-2",
+      reviewStatus: "approved",
+      propagandaScore: 0,
       title: "Brief Update",
       body: ["A short article."],
       sourceTags: ["breaking"],

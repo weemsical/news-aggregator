@@ -13,12 +13,10 @@ async function start() {
 
   const repos = createRepositories();
 
-  if (process.env.DATABASE_URL) {
-    const pool = getPool();
-    await runMigrations(pool);
-  }
+  const pool = getPool();
+  await runMigrations(pool);
 
-  await loadSeedData(repos.articles);
+  await loadSeedData({ articles: repos.articles, rawArticles: repos.rawArticles });
 
   const app = createApp(repos);
   app.listen(PORT, () => {

@@ -1,7 +1,7 @@
-import { Article } from "../types";
-import { ArticleRepository } from "./ArticleRepository";
+import { Article } from "../../types";
+import { ArticleRepository } from "../../repositories/ArticleRepository";
 
-export class InMemoryArticleRepository implements ArticleRepository {
+export class TestInMemoryArticleRepository implements ArticleRepository {
   private articles: Map<string, Article> = new Map();
 
   async save(article: Article): Promise<void> {
@@ -21,9 +21,9 @@ export class InMemoryArticleRepository implements ArticleRepository {
   }
 
   async findAll(): Promise<Article[]> {
-    return Array.from(this.articles.values()).sort(
-      (a, b) => b.fetchedAt - a.fetchedAt
-    );
+    return Array.from(this.articles.values())
+      .filter((a) => a.reviewStatus === "approved")
+      .sort((a, b) => b.fetchedAt - a.fetchedAt);
   }
 
   async exists(id: string): Promise<boolean> {

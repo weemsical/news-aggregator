@@ -5,6 +5,9 @@ import { AnonymizedArticle } from "../../types";
 
 const sampleArticle: AnonymizedArticle = {
   id: "test-1",
+  rawArticleId: "test-1",
+  reviewStatus: "approved",
+  propagandaScore: 0,
   title: "Test Article Title",
   subtitle: "Test subtitle here",
   body: ["Paragraph one.", "Paragraph two.", "Paragraph three."],

@@ -6,6 +6,9 @@ import { AnonymizedArticle } from "../../types";
 const articles: AnonymizedArticle[] = [
   {
     id: "a1",
+    rawArticleId: "a1",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     title: "First Article",
     body: ["Body one.", "Body two.", "Body three."],
     sourceTags: ["tag1"],
@@ -13,6 +16,9 @@ const articles: AnonymizedArticle[] = [
   },
   {
     id: "a2",
+    rawArticleId: "a2",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     title: "Second Article",
     subtitle: "With subtitle",
     body: ["Body content here."],

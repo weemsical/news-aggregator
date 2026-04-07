@@ -1,7 +1,7 @@
-import { FeedSource } from "../data/feedSources";
-import { FeedSourceRepository } from "./FeedSourceRepository";
+import { FeedSource } from "../../data/feedSources";
+import { FeedSourceRepository } from "../../repositories/FeedSourceRepository";
 
-export class InMemoryFeedSourceRepository implements FeedSourceRepository {
+export class TestInMemoryFeedSourceRepository implements FeedSourceRepository {
   private sources: Map<string, FeedSource> = new Map();
 
   async save(source: FeedSource): Promise<void> {

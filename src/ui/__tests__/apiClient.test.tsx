@@ -1,7 +1,9 @@
 import {
   fetchArticles,
-  fetchFlags,
-  createFlag,
+  fetchHighlights,
+  createHighlight,
+  updateHighlight,
+  deleteHighlight,
   signup,
   login,
   logout,
@@ -18,8 +20,8 @@ const mockArticles = [
   { id: "a-2", title: "Article Two", body: ["Body."], sourceTags: ["news"], fetchedAt: 1738100000000 },
 ];
 
-const mockFlags = [
-  { id: "f-1", articleId: "a-1", userId: "u-1", highlightedText: "Body", explanation: "Vague", timestamp: 1738000000001 },
+const mockHighlights = [
+  { id: "h-1", articleId: "a-1", userId: "u-1", paragraphIndex: 0, startOffset: 0, endOffset: 4, highlightedText: "Body", explanation: "Vague", isEdited: false, originalExplanation: null, createdAt: 1738000000001, updatedAt: 1738000000001 },
 ];
 
 beforeEach(() => {
@@ -46,41 +48,42 @@ describe("fetchArticles", () => {
   });
 });
 
-describe("fetchFlags", () => {
-  it("returns flags for a given article", async () => {
+describe("fetchHighlights", () => {
+  it("returns highlights for a given article", async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockFlags),
+      json: () => Promise.resolve(mockHighlights),
     });
 
-    const flags = await fetchFlags("a-1");
+    const highlights = await fetchHighlights("a-1");
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/articles/a-1/flags", { credentials: "include" });
-    expect(flags).toEqual(mockFlags);
+    expect(global.fetch).toHaveBeenCalledWith("/api/articles/a-1/highlights", { credentials: "include" });
+    expect(highlights).toEqual(mockHighlights);
   });
 
   it("throws when the response is not ok", async () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404 });
 
-    await expect(fetchFlags("missing")).rejects.toThrow("Failed to fetch flags");
+    await expect(fetchHighlights("missing")).rejects.toThrow("Failed to fetch highlights");
   });
 });
 
-describe("createFlag", () => {
-  it("posts flag data and returns the created flag", async () => {
-    const created = { id: "f-2", articleId: "a-1", userId: "u-1", highlightedText: "Body", explanation: "Biased", timestamp: 1738000000002 };
+describe("createHighlight", () => {
+  it("posts highlight data and returns the created highlight", async () => {
+    const created = { id: "h-2", articleId: "a-1", userId: "u-1", paragraphIndex: 0, startOffset: 0, endOffset: 4, highlightedText: "Body", explanation: "Biased", isEdited: false, originalExplanation: null, createdAt: 1738000000002, updatedAt: 1738000000002 };
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(created),
     });
 
-    const result = await createFlag("a-1", { highlightedText: "Body", explanation: "Biased" });
+    const data = { paragraphIndex: 0, startOffset: 0, endOffset: 4, highlightedText: "Body", explanation: "Biased" };
+    const result = await createHighlight("a-1", data);
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/articles/a-1/flags", {
+    expect(global.fetch).toHaveBeenCalledWith("/api/articles/a-1/highlights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ highlightedText: "Body", explanation: "Biased" }),
+      body: JSON.stringify(data),
     });
     expect(result).toEqual(created);
   });
@@ -88,7 +91,52 @@ describe("createFlag", () => {
   it("throws when the response is not ok", async () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 400 });
 
-    await expect(createFlag("a-1", { highlightedText: "", explanation: "" })).rejects.toThrow("Failed to create flag");
+    await expect(createHighlight("a-1", { paragraphIndex: 0, startOffset: 0, endOffset: 4, highlightedText: "", explanation: "" })).rejects.toThrow("Failed to create highlight");
+  });
+});
+
+describe("updateHighlight", () => {
+  it("puts explanation and returns updated highlight", async () => {
+    const updated = { ...mockHighlights[0], explanation: "Updated", isEdited: true, originalExplanation: "Vague" };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(updated),
+    });
+
+    const result = await updateHighlight("h-1", { explanation: "Updated" });
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/highlights/h-1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ explanation: "Updated" }),
+    });
+    expect(result).toEqual(updated);
+  });
+
+  it("throws when the response is not ok", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404 });
+
+    await expect(updateHighlight("h-1", { explanation: "x" })).rejects.toThrow("Failed to update highlight");
+  });
+});
+
+describe("deleteHighlight", () => {
+  it("sends DELETE request for the highlight", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+    await deleteHighlight("h-1");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/highlights/h-1", {
+      method: "DELETE",
+      credentials: "include",
+    });
+  });
+
+  it("throws when the response is not ok", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404 });
+
+    await expect(deleteHighlight("h-1")).rejects.toThrow("Failed to delete highlight");
   });
 });
 

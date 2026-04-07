@@ -7,11 +7,12 @@ export class PostgresArticleRepository implements ArticleRepository {
 
   async save(article: Article): Promise<void> {
     await this.pool.query(
-      `INSERT INTO articles (id, title, subtitle, body, source_tags, source_id, url, fetched_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO articles (id, raw_article_id, title, subtitle, body, source_tags, source_id, url, fetched_at, review_status, propaganda_score)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (id) DO NOTHING`,
       [
         article.id,
+        article.rawArticleId,
         article.title,
         article.subtitle ?? null,
         JSON.stringify(article.body),
@@ -19,6 +20,8 @@ export class PostgresArticleRepository implements ArticleRepository {
         article.sourceId,
         article.url,
         article.fetchedAt,
+        article.reviewStatus,
+        article.propagandaScore,
       ]
     );
   }
@@ -39,7 +42,7 @@ export class PostgresArticleRepository implements ArticleRepository {
 
   async findAll(): Promise<Article[]> {
     const { rows } = await this.pool.query(
-      "SELECT * FROM articles ORDER BY fetched_at DESC"
+      "SELECT * FROM articles WHERE review_status = 'approved' ORDER BY fetched_at DESC"
     );
     return rows.map((row) => this.toArticle(row));
   }
@@ -60,6 +63,7 @@ export class PostgresArticleRepository implements ArticleRepository {
   private toArticle(row: any): Article {
     return {
       id: row.id,
+      rawArticleId: row.raw_article_id,
       title: row.title,
       subtitle: row.subtitle ?? undefined,
       body: row.body,
@@ -67,6 +71,8 @@ export class PostgresArticleRepository implements ArticleRepository {
       sourceId: row.source_id,
       url: row.url,
       fetchedAt: Number(row.fetched_at),
+      reviewStatus: row.review_status,
+      propagandaScore: Number(row.propaganda_score),
     };
   }
 }

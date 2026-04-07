@@ -1,6 +1,6 @@
 import { runFetchArticles } from "../scripts/fetchArticles";
 import * as RssFetcher from "../services/RssFetcher";
-import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
+import { TestInMemoryArticleRepository } from "./helpers/TestInMemoryArticleRepository";
 
 jest.mock("../services/RssFetcher");
 const mockFetchFeed = RssFetcher.fetchFeed as jest.MockedFunction<typeof RssFetcher.fetchFeed>;
@@ -17,10 +17,10 @@ const rssXml = (title: string, link: string) => `<?xml version="1.0"?>
   </rss>`;
 
 describe("runFetchArticles", () => {
-  let repo: InMemoryArticleRepository;
+  let repo: TestInMemoryArticleRepository;
 
   beforeEach(() => {
-    repo = new InMemoryArticleRepository();
+    repo = new TestInMemoryArticleRepository();
     mockFetchFeed.mockReset();
   });
 
@@ -61,13 +61,11 @@ describe("runFetchArticles", () => {
   });
 
   it("deduplicates articles by ID across runs", async () => {
-    // First run
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Same Article", "https://example.com/same") });
     await runFetchArticles(repo);
 
     const firstCount = await repo.count();
 
-    // Second run — same articles
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Same Article", "https://example.com/same") });
     await runFetchArticles(repo);
 
@@ -76,13 +74,11 @@ describe("runFetchArticles", () => {
   });
 
   it("merges new articles with existing ones", async () => {
-    // First run
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("First Article", "https://example.com/first") });
     await runFetchArticles(repo);
 
     const firstCount = await repo.count();
 
-    // Second run with different articles
     mockFetchFeed.mockResolvedValue({ ok: true, xml: rssXml("Second Article", "https://example.com/second") });
     await runFetchArticles(repo);
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { AnonymizedArticle, PropagandaFlag } from "../types";
-import { fetchFlags, createFlag } from "./apiClient";
+import { AnonymizedArticle, Highlight } from "../types";
+import { fetchHighlights, createHighlight, updateHighlight, deleteHighlight } from "./apiClient";
 import { useAuth } from "./AuthContext";
-import { FlagToggle, FlagView } from "./FlagToggle";
+import { HighlightToggle, HighlightView } from "./HighlightToggle";
 import { HighlightedParagraph } from "./HighlightedParagraph";
-import { FlagPopover } from "./FlagPopover";
+import { HighlightPopover } from "./HighlightPopover";
 import { getSelectionInfo } from "./getSelectionInfo";
 import "./ArticleReader.css";
 
@@ -17,31 +17,42 @@ interface PopoverState {
   text: string;
   top: number;
   left: number;
+  paragraphIndex: number;
+  startOffset: number;
+  endOffset: number;
+  mode: "create" | "edit";
+  highlightId?: string;
+  initialExplanation?: string;
 }
 
 export function ArticleReader({ article, onBack }: ArticleReaderProps) {
   const { user } = useAuth();
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const [flags, setFlags] = useState<PropagandaFlag[]>([]);
-  const [flagView, setFlagView] = useState<FlagView>("all");
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [highlightView, setHighlightView] = useState<HighlightView>("all");
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchFlags(article.id)
-      .then(setFlags)
-      .catch(() => setFlags([]));
+    fetchHighlights(article.id)
+      .then(setHighlights)
+      .catch(() => setHighlights([]));
   }, [article.id]);
 
-  const visibleFlags = useMemo(() => {
+  const visibleHighlights = useMemo(() => {
     if (!user) return [];
-    if (flagView === "none") return [];
-    if (flagView === "mine") return flags.filter((f) => f.userId === user.id);
-    return flags;
-  }, [flags, flagView, user]);
+    if (highlightView === "none") return [];
+    if (highlightView === "mine") return highlights.filter((h) => h.userId === user.id);
+    return highlights;
+  }, [highlights, highlightView, user]);
+
+  const highlightsForParagraph = (paragraphIndex: number) =>
+    visibleHighlights
+      .filter((h) => h.paragraphIndex === paragraphIndex)
+      .map((h) => ({ id: h.id, startOffset: h.startOffset, endOffset: h.endOffset }));
 
   const handleMouseUp = () => {
     if (!user) return;
-    const info = getSelectionInfo();
+    const info = getSelectionInfo(bodyRef.current);
     if (!info || !bodyRef.current) {
       return;
     }
@@ -51,6 +62,10 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
       text: info.text,
       top: info.rect.bottom - bodyRect.top + 4,
       left: info.rect.left - bodyRect.left,
+      paragraphIndex: info.paragraphIndex,
+      startOffset: info.startOffset,
+      endOffset: info.endOffset,
+      mode: "create",
     });
   };
 
@@ -58,16 +73,39 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
     if (!popover) return;
 
     try {
-      const newFlag = await createFlag(article.id, {
-        highlightedText: popover.text,
-        explanation,
-      });
-      setFlags((prev) => [...prev, newFlag]);
+      if (popover.mode === "edit" && popover.highlightId) {
+        const updated = await updateHighlight(popover.highlightId, { explanation });
+        setHighlights((prev) =>
+          prev.map((h) => (h.id === popover.highlightId ? updated : h))
+        );
+      } else {
+        const newHighlight = await createHighlight(article.id, {
+          paragraphIndex: popover.paragraphIndex,
+          startOffset: popover.startOffset,
+          endOffset: popover.endOffset,
+          highlightedText: popover.text,
+          explanation,
+        });
+        setHighlights((prev) => [...prev, newHighlight]);
+      }
     } catch {
-      // Flag creation failed — silently ignore
+      // Highlight operation failed — silently ignore
     }
 
     window.getSelection()?.removeAllRanges();
+    setPopover(null);
+  };
+
+  const handleDelete = async () => {
+    if (!popover?.highlightId) return;
+
+    try {
+      await deleteHighlight(popover.highlightId);
+      setHighlights((prev) => prev.filter((h) => h.id !== popover.highlightId));
+    } catch {
+      // Delete failed — silently ignore
+    }
+
     setPopover(null);
   };
 
@@ -93,7 +131,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
         ))}
       </div>
       {user && (
-        <FlagToggle value={flagView} onChange={setFlagView} />
+        <HighlightToggle value={highlightView} onChange={setHighlightView} />
       )}
       <div
         className="article-reader__body"
@@ -104,14 +142,19 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
           <HighlightedParagraph
             key={index}
             text={paragraph}
-            flags={visibleFlags.map((f) => ({ highlightedText: f.highlightedText, id: f.id }))}
+            paragraphIndex={index}
+            highlights={highlightsForParagraph(index)}
           />
         ))}
         {popover && (
-          <FlagPopover
+          <HighlightPopover
             selectedText={popover.text}
             position={{ top: popover.top, left: popover.left }}
+            mode={popover.mode}
+            initialExplanation={popover.initialExplanation}
+            highlightId={popover.highlightId}
             onSubmit={handleSubmit}
+            onDelete={popover.mode === "edit" ? handleDelete : undefined}
             onCancel={handleCancel}
           />
         )}

@@ -9,16 +9,20 @@ export function articleRepositoryContractTests(
 
   const foxArticle: Article = {
     id: "article-1",
+    rawArticleId: "article-1",
     title: "Senator Tells House Committee Key Details",
     body: ["The former official accused the committee.", "Second paragraph."],
     sourceTags: ["politics", "investigations"],
     sourceId: "fox-news",
     url: "https://foxnews.com/politics/senator-testimony",
     fetchedAt: 1740000000000,
+    reviewStatus: "approved",
+    propagandaScore: 0,
   };
 
   const cnnArticle: Article = {
     id: "article-2",
+    rawArticleId: "article-2",
     title: "Major Policy Change Announced",
     subtitle: "Officials respond to new directive",
     body: ["The administration announced changes.", "Critics argue lack of oversight."],
@@ -26,6 +30,8 @@ export function articleRepositoryContractTests(
     sourceId: "cnn",
     url: "https://cnn.com/politics/major-policy-change",
     fetchedAt: 1740100000000,
+    reviewStatus: "approved",
+    propagandaScore: 0,
   };
 
   beforeEach(async () => {
@@ -85,8 +91,8 @@ export function articleRepositoryContractTests(
   });
 
   it("returns articles ordered by fetchedAt descending", async () => {
-    await repo.save(foxArticle);  // fetchedAt: 1740000000000
-    await repo.save(cnnArticle);  // fetchedAt: 1740100000000
+    await repo.save(foxArticle);
+    await repo.save(cnnArticle);
     const all = await repo.findAll();
     expect(all[0].id).toBe("article-2");
     expect(all[1].id).toBe("article-1");

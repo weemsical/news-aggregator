@@ -1,16 +1,10 @@
 import { Article, AnonymizedArticle } from "../types";
 
 describe("AnonymizedArticle", () => {
-  /**
-   * An AnonymizedArticle is what the user actually sees.
-   * It strips all fields that could identify the source — sourceId and url —
-   * so the user judges the content on its merit, not its origin.
-   * The source is only revealed later in aggregate propaganda statistics.
-   */
-
   it("should exclude sourceId and url from the article", () => {
     const anonymized: AnonymizedArticle = {
       id: "article-1",
+      rawArticleId: "article-1",
       title: "Senator Tells House Committee 'I Do Not Recall' Key Details",
       subtitle: "Politician testifies before oversight committee on Thursday",
       body: [
@@ -19,6 +13,8 @@ describe("AnonymizedArticle", () => {
       ],
       sourceTags: ["politics", "investigations"],
       fetchedAt: 1740000000000,
+      reviewStatus: "approved",
+      propagandaScore: 0,
     };
 
     expect(anonymized).not.toHaveProperty("sourceId");
@@ -31,6 +27,7 @@ describe("AnonymizedArticle", () => {
   it("should be creatable from an Article by stripping identifying fields", () => {
     const article: Article = {
       id: "article-2",
+      rawArticleId: "article-2",
       title: "Major Policy Change Announced",
       subtitle: "Officials respond to new directive",
       body: ["The administration announced sweeping changes."],
@@ -38,6 +35,8 @@ describe("AnonymizedArticle", () => {
       sourceId: "fox-news",
       url: "https://foxnews.com/politics/major-policy-change",
       fetchedAt: 1740100000000,
+      reviewStatus: "approved",
+      propagandaScore: 0,
     };
 
     const { sourceId, url, ...anonymized } = article;
@@ -52,12 +51,15 @@ describe("AnonymizedArticle", () => {
   it("should preserve sourceTags since they describe content, not origin", () => {
     const article: Article = {
       id: "article-3",
+      rawArticleId: "article-3",
       title: "Trade Agreement Analysis",
       body: ["Experts weigh in on the new agreement."],
       sourceTags: ["economy", "trade", "international"],
       sourceId: "bbc",
       url: "https://bbc.com/economy/trade",
       fetchedAt: 1740200000000,
+      reviewStatus: "approved",
+      propagandaScore: 0,
     };
 
     const { sourceId, url, ...anonymized } = article;

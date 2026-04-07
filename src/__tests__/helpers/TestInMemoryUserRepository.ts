@@ -1,7 +1,7 @@
-import { User } from "../types";
-import { UserRepository } from "./UserRepository";
+import { User } from "../../types";
+import { UserRepository } from "../../repositories/UserRepository";
 
-export class InMemoryUserRepository implements UserRepository {
+export class TestInMemoryUserRepository implements UserRepository {
   private users: Map<string, User> = new Map();
 
   async save(user: User): Promise<void> {

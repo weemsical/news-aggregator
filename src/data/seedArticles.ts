@@ -7,12 +7,13 @@ import { Article } from "../types";
  * that users of the app would be learning to identify.
  *
  * These serve as:
- * 1. Integration test fixtures for ArticleStore / FlagStore
+ * 1. Integration test fixtures for article and highlight stores
  * 2. Demo content for frontend development
  */
 export const seedArticles: Article[] = [
   {
     id: "fox-border-crisis-001",
+    rawArticleId: "fox-border-crisis-001",
     title: "Border Crisis Deepens as Record Numbers Overwhelm Agents",
     subtitle: "Officials say they are at a breaking point",
     body: [
@@ -26,10 +27,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["immigration", "border", "politics", "law enforcement"],
     sourceId: "fox-news",
     url: "https://foxnews.com/politics/border-crisis-record-numbers",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738000000000,
   },
   {
     id: "cnn-gun-reform-002",
+    rawArticleId: "cnn-gun-reform-002",
     title: "Families of Shooting Victims Demand Action as Congress Stalls",
     subtitle: "Emotional testimony highlights legislative inaction",
     body: [
@@ -44,10 +48,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["gun control", "politics", "congress", "public safety"],
     sourceId: "cnn",
     url: "https://cnn.com/politics/gun-reform-shooting-victims-congress",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738100000000,
   },
   {
     id: "bbc-climate-summit-003",
+    rawArticleId: "bbc-climate-summit-003",
     title: "World Leaders Clash Over Climate Commitments at Global Summit",
     subtitle: "Developing nations accuse wealthy countries of broken promises",
     body: [
@@ -62,10 +69,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["climate", "international", "environment", "diplomacy"],
     sourceId: "bbc",
     url: "https://bbc.com/news/world-climate-summit-leaders-clash",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738200000000,
   },
   {
     id: "reuters-fed-rates-004",
+    rawArticleId: "reuters-fed-rates-004",
     title: "Federal Reserve Holds Rates Steady Amid Mixed Economic Signals",
     body: [
       "The Federal Reserve opted to keep its benchmark interest rate unchanged at 5.25 to 5.5 percent Wednesday, citing a complex economic landscape that defies easy categorization.",
@@ -78,10 +88,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["economy", "federal reserve", "markets", "interest rates"],
     sourceId: "reuters",
     url: "https://reuters.com/markets/fed-holds-rates-steady-mixed-signals",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738300000000,
   },
   {
     id: "msnbc-voter-suppression-005",
+    rawArticleId: "msnbc-voter-suppression-005",
     title: "New Voting Restrictions Threaten to Disenfranchise Millions, Advocates Warn",
     subtitle: "Civil rights groups file lawsuits in multiple states",
     body: [
@@ -96,10 +109,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["voting rights", "civil rights", "politics", "elections"],
     sourceId: "msnbc",
     url: "https://msnbc.com/politics/voting-restrictions-disenfranchise-millions",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738400000000,
   },
   {
     id: "ap-opioid-settlement-006",
+    rawArticleId: "ap-opioid-settlement-006",
     title: "Pharmaceutical Giants Agree to $46 Billion Opioid Settlement",
     body: [
       "Three of the nation's largest pharmaceutical distributors and one manufacturer have agreed to a landmark $46 billion settlement to resolve thousands of lawsuits alleging they fueled the opioid crisis.",
@@ -113,10 +129,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["health", "opioid crisis", "legal", "pharmaceuticals"],
     sourceId: "ap-news",
     url: "https://apnews.com/article/opioid-settlement-46-billion",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738500000000,
   },
   {
     id: "nypost-crime-wave-007",
+    rawArticleId: "nypost-crime-wave-007",
     title: "NYC Subway Crime Spree Continues as Riders Fear for Their Safety",
     subtitle: "Another violent attack caught on camera",
     body: [
@@ -131,10 +150,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["crime", "new york", "public safety", "transit"],
     sourceId: "new-york-post",
     url: "https://nypost.com/news/nyc-subway-crime-spree-safety",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738600000000,
   },
   {
     id: "guardian-tech-monopoly-008",
+    rawArticleId: "guardian-tech-monopoly-008",
     title: "Big Tech's Grip on Democracy: How Social Media Algorithms Distort Reality",
     subtitle: "Internal documents reveal platforms prioritize engagement over truth",
     body: [
@@ -150,10 +172,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["technology", "social media", "democracy", "regulation"],
     sourceId: "the-guardian",
     url: "https://theguardian.com/technology/big-tech-algorithms-democracy",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738700000000,
   },
   {
     id: "fox-education-culture-009",
+    rawArticleId: "fox-education-culture-009",
     title: "Parents Fight Back Against Radical Curriculum in Public Schools",
     subtitle: "School board meetings become battlegrounds across the country",
     body: [
@@ -168,10 +193,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["education", "culture war", "politics", "parenting"],
     sourceId: "fox-news",
     url: "https://foxnews.com/politics/parents-fight-radical-curriculum-schools",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738800000000,
   },
   {
     id: "cnn-healthcare-costs-010",
+    rawArticleId: "cnn-healthcare-costs-010",
     title: "Americans Skipping Medications as Drug Prices Hit Record Highs",
     subtitle: "Insulin rationing deaths highlight pharmaceutical pricing crisis",
     body: [
@@ -186,10 +214,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["healthcare", "pharmaceuticals", "politics", "economy"],
     sourceId: "cnn",
     url: "https://cnn.com/health/americans-skipping-medications-drug-prices",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1738900000000,
   },
   {
     id: "reuters-ai-regulation-011",
+    rawArticleId: "reuters-ai-regulation-011",
     title: "European Union Finalizes Landmark Artificial Intelligence Regulations",
     body: [
       "The European Parliament voted overwhelmingly to approve the AI Act on Wednesday, establishing the world's first comprehensive legal framework for regulating artificial intelligence systems.",
@@ -203,10 +234,13 @@ export const seedArticles: Article[] = [
     sourceTags: ["technology", "artificial intelligence", "regulation", "european union"],
     sourceId: "reuters",
     url: "https://reuters.com/technology/eu-finalizes-ai-act-regulations",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1739000000000,
   },
   {
     id: "nypost-migrant-hotels-012",
+    rawArticleId: "nypost-migrant-hotels-012",
     title: "Luxury Hotels Turned Migrant Shelters Cost Taxpayers $400 Per Night",
     subtitle: "Residents furious as city prioritizes migrants over homeless veterans",
     body: [
@@ -221,6 +255,8 @@ export const seedArticles: Article[] = [
     sourceTags: ["immigration", "new york", "government spending", "politics"],
     sourceId: "new-york-post",
     url: "https://nypost.com/news/migrant-hotels-cost-taxpayers-400-night",
+    reviewStatus: "approved",
+    propagandaScore: 0,
     fetchedAt: 1739100000000,
   },
 ];

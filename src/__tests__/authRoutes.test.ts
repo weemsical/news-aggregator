@@ -1,17 +1,9 @@
 import request from "supertest";
-import { createApp } from "../server/app";
-import { InMemoryArticleRepository } from "../repositories/InMemoryArticleRepository";
-import { InMemoryFlagRepository } from "../repositories/InMemoryFlagRepository";
-import { InMemoryUserRepository } from "../repositories/InMemoryUserRepository";
-import { InMemoryFeedSourceRepository } from "../repositories/InMemoryFeedSourceRepository";
+import { buildTestApp } from "./helpers/buildTestApp";
 
 function buildApp() {
-  return createApp({
-    articles: new InMemoryArticleRepository(),
-    flags: new InMemoryFlagRepository(),
-    users: new InMemoryUserRepository(),
-    feedSources: new InMemoryFeedSourceRepository(),
-  });
+  const { app } = buildTestApp();
+  return app;
 }
 
 describe("POST /api/auth/signup", () => {

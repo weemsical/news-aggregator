@@ -1,4 +1,5 @@
 export { Article, AnonymizedArticle } from "./Article";
-export { PropagandaFlag } from "./PropagandaFlag";
+export { Highlight } from "./Highlight";
+export { RawArticle } from "./RawArticle";
 export { User } from "./User";
 export { LeaderboardEntry } from "./LeaderboardEntry";

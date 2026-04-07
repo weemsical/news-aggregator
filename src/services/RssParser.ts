@@ -56,14 +56,18 @@ function parseItems(
 
     const sourceTags = extractTags(item, source);
 
+    const id = generateId(source.sourceId, url);
     articles.push({
-      id: generateId(source.sourceId, url),
+      id,
+      rawArticleId: id,
       title: decodeEntities(title),
       body,
       sourceTags,
       sourceId: source.sourceId,
       url,
       fetchedAt: now,
+      reviewStatus: "approved",
+      propagandaScore: 0,
     });
   }
 

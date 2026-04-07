@@ -1,4 +1,4 @@
-import { AnonymizedArticle, PropagandaFlag, LeaderboardEntry } from "../types";
+import { AnonymizedArticle, Highlight, LeaderboardEntry } from "../types";
 
 export interface AuthUser {
   id: string;
@@ -25,26 +25,54 @@ export async function fetchArticles(): Promise<AnonymizedArticle[]> {
   return response.json();
 }
 
-export async function fetchFlags(articleId: string): Promise<PropagandaFlag[]> {
-  const response = await fetch(`/api/articles/${articleId}/flags`, {
+export async function fetchHighlights(articleId: string): Promise<Highlight[]> {
+  const response = await fetch(`/api/articles/${articleId}/highlights`, {
     credentials: "include",
   });
-  if (!response.ok) throw new Error("Failed to fetch flags");
+  if (!response.ok) throw new Error("Failed to fetch highlights");
   return response.json();
 }
 
-export async function createFlag(
+export async function createHighlight(
   articleId: string,
-  data: { highlightedText: string; explanation: string }
-): Promise<PropagandaFlag> {
-  const response = await fetch(`/api/articles/${articleId}/flags`, {
+  data: {
+    paragraphIndex: number;
+    startOffset: number;
+    endOffset: number;
+    highlightedText: string;
+    explanation: string;
+  }
+): Promise<Highlight> {
+  const response = await fetch(`/api/articles/${articleId}/highlights`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Failed to create flag");
+  if (!response.ok) throw new Error("Failed to create highlight");
   return response.json();
+}
+
+export async function updateHighlight(
+  highlightId: string,
+  data: { explanation: string }
+): Promise<Highlight> {
+  const response = await fetch(`/api/highlights/${highlightId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update highlight");
+  return response.json();
+}
+
+export async function deleteHighlight(highlightId: string): Promise<void> {
+  const response = await fetch(`/api/highlights/${highlightId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to delete highlight");
 }
 
 export async function signup(
