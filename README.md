@@ -2,137 +2,156 @@
 
 Read the news. Spot the spin.
 
-A web app that strips identifying information from news articles and lets you read them blind — no source, no author, no branding. Your job is to highlight passages you think are propaganda and explain why. The app tracks which sources accumulate the most flags, revealed only in aggregate.
+A web app that strips identifying information from news articles and lets you read them blind — no source, no author, no branding. Select specific passages you think are propaganda, explain why, and submit your highlight. The app tracks which sources accumulate the most propaganda through a weighted scoring system, revealed only on a logged-in scores page.
 
 ## Quick Start
 
-**Prerequisites:** Node.js 20+ and npm. If you use [nvm](https://github.com/nvm-sh/nvm):
+**Prerequisites:** Node.js 20+, npm, and either Docker or a local PostgreSQL instance.
 
 ```bash
-nvm use
+npm start
 ```
 
-**Install and run:**
-
-```bash
-npm run start
-```
+This runs the setup script which:
+1. Starts a Postgres container via Docker (or uses your existing `DATABASE_URL`)
+2. Installs dependencies if needed
+3. Runs database migrations automatically
+4. Loads seed articles (12 real-world-style articles from 8 sources)
+5. Starts both the API server (port 3001) and Vite dev server (port 5173)
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-You'll see a list of anonymized news articles. Click one to read the full text. Highlight any passage you think is propaganda, explain why, and submit your flag. Click "Back to articles" to return to the list. Flags persist across page refreshes when a database is connected.
+**Manual setup** (if you don't want Docker):
 
-## Database Setup (Optional)
+```bash
+cp .env.example .env
+# Edit .env with your DATABASE_URL, JWT_SECRET, ADMIN_EMAILS
+npm install
+npm run dev
+```
 
-The app works out of the box with in-memory storage (data is lost on restart). To persist articles, flags, and user accounts across sessions, set up a PostgreSQL database:
+## Database Setup
 
-1. Create a `.env` file from the example:
-   ```bash
-   cp .env.example .env
-   ```
-2. Set your `DATABASE_URL`, `JWT_SECRET`, and optionally `ADMIN_EMAILS` in `.env`:
-   ```
-   DATABASE_URL=postgresql://localhost:5432/icallbullshit
-   JWT_SECRET=change-me-to-a-random-secret
-   ADMIN_EMAILS=admin@example.com
-   ```
-3. Tables are created automatically on server start (auto-migration).
+PostgreSQL is required — there is no in-memory fallback.
 
-`JWT_SECRET` is required in production. In development, a default fallback is used.
+Set your connection in `.env`:
+```
+DATABASE_URL=postgresql://localhost:5432/icallbullshit
+JWT_SECRET=change-me-to-a-random-secret
+ADMIN_EMAILS=admin@example.com
+```
 
-`ADMIN_EMAILS` is a comma-separated list of email addresses that have admin access. Admins can manage feed sources and trigger article fetches from the UI.
+Tables are created automatically on server start (auto-migration). `JWT_SECRET` is required in production. `ADMIN_EMAILS` is a comma-separated list of email addresses that have admin access.
 
 Free PostgreSQL hosting: [Neon](https://neon.tech), [Supabase](https://supabase.com), [Railway](https://railway.app), [Render](https://render.com).
+
+## How It Works
+
+1. **Articles are ingested** from 8 built-in news sources via RSS feeds (Fox News, CNN, BBC, Reuters, MSNBC, AP News, New York Post, The Guardian). Admins can add more sources at runtime.
+2. **Raw articles are preserved** in a separate table; processed/anonymized articles are what readers see.
+3. **Identifying info is stripped** — source name, author, and URL are removed before reaching the browser.
+4. **You read blind** — judge the writing on its own merit, not the masthead.
+5. **Sign up / log in** — create an account to highlight articles (read-only access without an account).
+6. **Highlight what you spot** — select a passage in the article, write a short explanation of the propaganda technique you see, and submit. Selections automatically snap to word boundaries.
+7. **Edit or delete** — logged-in users can edit their own explanations (tagged "edited" with original on hover) or delete their highlights entirely.
+8. **Toggle your view** — switch between "My Highlights", "All Highlights", or "None" to compare your highlights against everyone else's.
+9. **Highlights persist** — saved to the database via the API, highlighted passages appear in blue across sessions.
+10. **Admin panel** — admins can add/remove RSS feed sources and trigger immediate article fetches.
+
+## Planned Features (Phases 2-6)
+
+See [docs/PRD-propaganda-highlighting.md](docs/PRD-propaganda-highlighting.md) and [docs/PLAN-propaganda-highlighting.md](docs/PLAN-propaganda-highlighting.md) for the full roadmap:
+
+- **Phase 2:** Anonymous highlighting (yellow, rate-limited, drives sign-ups) + visibility toggle
+- **Phase 3:** Agree/disagree voting, threaded discussions per highlight, 50% overlap clustering
+- **Phase 4:** Weighted propaganda scoring with 3-vote minimum, source scores page (only place source names appear)
+- **Phase 5:** Admin dashboard with sidebar nav, per-source text replacement rules, article review queue
+- **Phase 6:** Scheduled daily RSS ingestion (cron, parallel with retry), in-app notification system
+
+## API
+
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/api/auth/signup` | No | Create account |
+| POST | `/api/auth/login` | No | Log in, sets JWT cookie |
+| POST | `/api/auth/logout` | No | Clear JWT cookie |
+| GET | `/api/auth/me` | Yes | Current user (includes `isAdmin`) |
+| GET | `/api/articles` | No | All approved articles (anonymized, newest first) |
+| GET | `/api/articles/:id` | No | Single article (anonymized) |
+| GET | `/api/articles/:id/highlights` | No | Highlights for an article (optional `?userId` filter) |
+| POST | `/api/articles/:id/highlights` | Yes | Create a highlight (body: `{ paragraphIndex, startOffset, endOffset, highlightedText, explanation }`) |
+| PUT | `/api/highlights/:id` | Yes | Update highlight explanation (owner only) |
+| DELETE | `/api/highlights/:id` | Yes | Delete a highlight (owner only) |
+| GET | `/api/leaderboard` | No | Stubbed — returns `[]` (replaced by scores page in Phase 4) |
+| GET | `/api/admin/feed-sources` | Admin | List all sources (static + dynamic) |
+| POST | `/api/admin/feed-sources` | Admin | Add a feed source |
+| DELETE | `/api/admin/feed-sources/:sourceId` | Admin | Remove a dynamic source |
+| POST | `/api/admin/feed-sources/:sourceId/fetch` | Admin | Fetch articles from one source immediately |
 
 ## Available Scripts
 
 | Command | What it does |
 |---|---|
-| `npm run start` | Install deps, fetch fresh articles, and start both servers |
-| `npm run dev` | Start Express API + Vite dev server concurrently |
+| `npm start` | Full dev setup: Postgres container + install + migrate + seed + run |
+| `npm run dev` | Start Express API + Vite dev server (requires DATABASE_URL) |
 | `npm run dev:server` | Start the Express API server only (port 3001) |
 | `npm test` | Run all tests (services + components) |
 | `npm run build` | Build for production into `dist-ui/` |
 | `npm run preview` | Preview the production build locally |
-| `npm run fetch-articles` | Fetch fresh articles from all RSS feeds (static + admin-added) into the repository |
+| `npm run fetch-articles` | Fetch fresh articles from all RSS feeds |
 | `npm run migrate` | Run database migrations (requires DATABASE_URL) |
 
 ## Architecture
 
 ```
 Browser (:5173) → Vite proxy → Express API (:3001) → Repository Interface → PostgreSQL
-                                                                           → InMemory (fallback)
 
-Fetch Script → Repository Interface → PostgreSQL / InMemory
+RSS Feeds → raw_articles table → anonymization pipeline → articles table
 ```
 
-The **repository pattern** decouples all storage from the rest of the app. Swapping databases requires zero changes to routes, UI, or business logic — just implement the `ArticleRepository`, `FlagRepository`, `UserRepository`, and `FeedSourceRepository` interfaces and update the factory.
+The **repository pattern** decouples all storage from the rest of the app. All repositories are PostgreSQL-only (no in-memory fallback). Test-only in-memory implementations live in `src/__tests__/helpers/`.
 
-**Authentication** uses JWT tokens stored in httpOnly cookies. The server sets the cookie on signup/login and clears it on logout. The `requireAuth` middleware protects flag creation; `optionalAuth` allows unauthenticated read access. The `requireAdmin` middleware gates admin routes by checking the user's email against the `ADMIN_EMAILS` env var.
+**Article storage** is split into two tables: `raw_articles` (original RSS content, immutable) and `articles` (processed/anonymized, with review status and propaganda score). Articles are immutable once published — highlight offsets depend on stable text.
 
-## How It Works
+**Highlights** use per-paragraph character offsets (`paragraph_index`, `start_offset`, `end_offset`) rather than text matching, for precision and to support future overlap detection.
 
-1. **Articles are ingested** from 8 built-in news sources via RSS feeds (Fox News, CNN, BBC, Reuters, MSNBC, AP News, New York Post, The Guardian). Admins can add more sources at runtime. Articles are stored in the database and served via the API. Seed articles load automatically when the database is empty.
-2. **Identifying info is stripped** — source name, author, and URL are removed by the API before reaching the browser
-3. **You read blind** — judge the writing on its own merit, not the masthead
-4. **Sign up / log in** — create an account to flag articles (read-only access without an account)
-5. **Flag what you spot** — highlight a passage in the article, write a short explanation of the propaganda technique you see, and submit
-6. **Toggle your view** — switch between "My Flags", "All Flags", or "None" to compare your flags against everyone else's
-7. **Flags persist** — saved to the database via the API, flagged passages appear with yellow highlights across sessions
-8. **Source leaderboard** — see which news sources accumulate the most propaganda flags, ranked by total flag count
-9. **Admin panel** — admins can add/remove RSS feed sources and trigger immediate article fetches without redeploying
-
-## API
-
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| POST | `/api/auth/signup` | No | Create account (body: `{ email, password }`) |
-| POST | `/api/auth/login` | No | Log in, sets JWT cookie (body: `{ email, password }`) |
-| POST | `/api/auth/logout` | No | Clear JWT cookie |
-| GET | `/api/auth/me` | Yes | Current user from JWT (includes `isAdmin`) |
-| GET | `/api/articles` | No | All articles (anonymized, newest first) |
-| GET | `/api/articles/:id` | No | Single article (anonymized) |
-| GET | `/api/articles/:id/flags` | No | Flags for an article (optional `?userId` filter) |
-| POST | `/api/articles/:id/flags` | Yes | Create a flag (body: `{ highlightedText, explanation }`) |
-| GET | `/api/leaderboard` | No | Source leaderboard ranked by flag count |
-| GET | `/api/admin/feed-sources` | Admin | List all sources (static + dynamic) |
-| POST | `/api/admin/feed-sources` | Admin | Add a feed source (body: `{ sourceId, name, feedUrl, defaultTags }`) |
-| DELETE | `/api/admin/feed-sources/:sourceId` | Admin | Remove a dynamic source |
-| POST | `/api/admin/feed-sources/:sourceId/fetch` | Admin | Fetch articles from one source immediately |
+**Authentication** uses JWT tokens stored in httpOnly cookies. The `requireAuth` middleware protects highlight creation; `optionalAuth` allows unauthenticated read access. The `requireAdmin` middleware gates admin routes by checking the user's email against `ADMIN_EMAILS`.
 
 ## Project Structure
 
 ```
 src/
 ├── types/                  Core data types
-│   ├── Article.ts            Article and AnonymizedArticle interfaces
-│   ├── PropagandaFlag.ts     PropagandaFlag interface (with userId)
-│   └── User.ts               User interface
-├── repositories/           Storage layer (swappable)
+│   ├── Article.ts            Article (with rawArticleId, reviewStatus, propagandaScore)
+│   ├── Highlight.ts          Highlight interface (paragraph offsets, edit tracking)
+│   ├── RawArticle.ts         Raw article as fetched from RSS
+│   ├── User.ts               User interface
+│   └── LeaderboardEntry.ts   Leaderboard entry (to be replaced in Phase 4)
+├── repositories/           Storage layer (PostgreSQL only)
 │   ├── ArticleRepository.ts  Interface for article storage
-│   ├── FlagRepository.ts     Interface for flag storage (incl. findByArticleAndUser)
+│   ├── HighlightRepository.ts Interface for highlight storage (CRUD + find by article/user)
+│   ├── RawArticleRepository.ts Interface for raw article storage
 │   ├── UserRepository.ts     Interface for user storage
 │   ├── FeedSourceRepository.ts Interface for feed source storage
-│   ├── InMemory*.ts          Map-based implementations (tests/fallback)
 │   ├── Postgres*.ts          PostgreSQL implementations
-│   └── createRepositories.ts Factory — picks impl via DATABASE_URL
+│   └── createRepositories.ts Factory — requires DATABASE_URL
 ├── db/                     Database infrastructure
-│   ├── migrations/           SQL migration files (001-004)
+│   ├── migrations/           SQL migration files (001-008)
 │   ├── migrate.ts            Migration runner
 │   └── pool.ts               PostgreSQL connection pool
 ├── server/                 Express API
-│   ├── app.ts                Express app assembly (with cookie-parser)
+│   ├── app.ts                Express app assembly
 │   ├── auth.ts               Password hashing, JWT sign/verify, validation
 │   ├── index.ts              Entry point (migrate, seed, listen)
-│   ├── seedLoader.ts         Loads seed articles when DB is empty
+│   ├── seedLoader.ts         Loads seed data into raw_articles + articles
 │   ├── middleware/
 │   │   ├── requireAuth.ts    requireAuth + optionalAuth middleware
 │   │   └── requireAdmin.ts   requireAdmin middleware (checks ADMIN_EMAILS)
 │   └── routes/
-│       ├── articles.ts       GET /api/articles, GET /api/articles/:id
-│       ├── auth.ts           POST signup/login/logout, GET me (with isAdmin)
-│       ├── flags.ts          GET/POST /api/articles/:id/flags (auth-protected POST)
-│       ├── leaderboard.ts    GET /api/leaderboard
+│       ├── articles.ts       GET /api/articles (approved only), GET /api/articles/:id
+│       ├── auth.ts           POST signup/login/logout, GET me
+│       ├── highlights.ts     CRUD highlights (GET/POST per article, PUT/DELETE by id)
+│       ├── leaderboard.ts    GET /api/leaderboard (stubbed for Phase 4)
 │       └── admin.ts          CRUD feed sources + fetch-now (admin-protected)
 ├── services/               Business logic
 │   ├── anonymize.ts          Strips source-identifying fields
@@ -140,48 +159,47 @@ src/
 │   └── RssFetcher.ts         Fetches RSS feed XML with timeout handling
 ├── data/
 │   ├── seedArticles.ts       12 real-world-style articles for demo/testing
-│   ├── feedSources.ts        RSS feed URLs and config for 8 built-in news sources
-│   └── getAllFeedSources.ts   Merges static + admin-added sources (DB wins on collision)
+│   ├── feedSources.ts        RSS feed URLs for 8 built-in news sources
+│   └── getAllFeedSources.ts   Merges static + admin-added sources
 ├── scripts/
 │   └── fetchArticles.ts      CLI script to fetch, parse, dedupe, and save articles
 └── ui/                     React components
     ├── main.tsx              Entry point
-    ├── App.tsx               Root component — AuthProvider, async loading, view switching
-    ├── AuthContext.tsx        AuthProvider + useAuth hook (JWT cookie sessions)
-    ├── AuthForm.tsx           Modal login/signup form with validation
-    ├── ArticleList.tsx        Scrollable list of article cards
-    ├── ArticleCard.tsx        Clickable card showing title, subtitle, and tags
-    ├── ArticleReader.tsx      Full article view with auth-gated flagging and toggle
-    ├── FlagToggle.tsx         Three-way toggle: My Flags / All Flags / None
-    ├── HighlightedParagraph.tsx  Renders paragraph with flagged text marked
-    ├── FlagPopover.tsx        Text selection popover for submitting flags
-    ├── SourceLeaderboard.tsx  Source leaderboard ranked by flag count
-    ├── AdminPanel.tsx         Admin panel for managing feed sources
-    ├── highlightText.ts       Pure function to split text by highlight regions
-    ├── getSelectionInfo.ts    Wrapper around browser Selection API
-    ├── apiClient.ts           Browser API client (articles, flags, auth, admin)
+    ├── App.tsx               Root component — auth, loading, view switching
+    ├── AuthContext.tsx        AuthProvider + useAuth hook
+    ├── AuthForm.tsx           Login/signup form
+    ├── ArticleList.tsx        Article card list
+    ├── ArticleCard.tsx        Clickable article card
+    ├── ArticleReader.tsx      Full article view with offset-based highlighting
+    ├── HighlightToggle.tsx    Three-way toggle: My Highlights / All / None
+    ├── HighlightedParagraph.tsx Renders paragraph with offset-based highlights
+    ├── HighlightPopover.tsx   Text selection popover (create + edit modes)
+    ├── SourceLeaderboard.tsx  Source leaderboard (to be replaced in Phase 4)
+    ├── AdminPanel.tsx         Admin panel for feed sources
+    ├── highlightText.ts       splitByOffsets — offset-based segment splitting
+    ├── getSelectionInfo.ts    Selection API wrapper with word boundary snapping
+    ├── apiClient.ts           Browser API client (highlights, auth, admin)
     └── articleData.ts         Async article loader (API or seed fallback)
 ```
 
 ## Testing
 
-Tests are split into two Jest projects that run together:
-
 ```bash
 npm test
 ```
 
-- **services** (Node environment) — repositories, contract tests, API routes, auth utilities, middleware, seed data, RSS parsing
-- **components** (jsdom environment) — React component rendering, user interaction, auth context, flag toggle, API client
+Two Jest projects run together:
+- **services** (Node environment) — repositories, API routes, auth, middleware, seed data, RSS parsing, highlight text splitting
+- **components** (jsdom environment) — React components, user interaction, auth context, highlight toggle/popover, API client
 
-302 tests across 38 suites. PostgreSQL contract tests (38 tests, 4 suites) auto-skip when `DATABASE_URL` is not set.
+274 tests across 33 suites. PostgreSQL integration tests (3 suites) auto-skip when `DATABASE_URL` is not set.
 
 ## Tech Stack
 
 - **TypeScript** with strict mode
 - **React 19** for the UI
 - **Express 5** for the API server
-- **PostgreSQL** via `pg` (default database)
+- **PostgreSQL** via `pg` (required)
 - **bcryptjs** for password hashing
 - **jsonwebtoken** for JWT auth
 - **cookie-parser** for httpOnly cookie sessions
@@ -191,21 +209,3 @@ npm test
 - **supertest** for API route tests
 - **Plain CSS** with BEM naming
 - **fast-xml-parser** for RSS/Atom feed parsing
-
-## What's Built So Far
-
-- [x] Core types (Article, AnonymizedArticle, PropagandaFlag, User)
-- [x] Anonymization service
-- [x] Repository pattern with swappable storage (InMemory + PostgreSQL)
-- [x] Express API server with article and flag endpoints
-- [x] User authentication (signup, login, logout) with JWT httpOnly cookies
-- [x] Auth-protected flag creation (flags tied to user accounts)
-- [x] Three-way flag toggle (My Flags / All Flags / None)
-- [x] Seed articles from 8 news sources
-- [x] Article browser UI (list and reader views)
-- [x] Text highlighting and propaganda flagging UI
-- [x] Persistent flags via database (survive page refresh)
-- [x] Daily RSS article ingestion from 8 news sources
-- [x] Source leaderboard — ranked by total propaganda flags per source
-- [x] Admin panel — add/remove RSS feed sources at runtime, trigger immediate fetches
-- [x] Admin access control via `ADMIN_EMAILS` environment variable

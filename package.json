@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "fetch-articles": "npx tsx src/scripts/fetchArticles.ts",
     "migrate": "npx tsx -e \"const {getPool}=require('./src/db/pool');const {runMigrations}=require('./src/db/migrate');runMigrations(getPool()).then(()=>process.exit(0))\"",
-    "start": "npm install && npm run fetch-articles; npm run dev"
+    "start": "bash scripts/dev-setup.sh"
   },
   "keywords": [],
   "author": "",
