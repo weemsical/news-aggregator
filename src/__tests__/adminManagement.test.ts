@@ -178,6 +178,18 @@ describe("Admin management", () => {
     expect(res.body.email).toBe("new@example.com");
   });
 
+  it("admin cannot remove themselves", async () => {
+    const { app } = buildTestApp();
+    const { cookie, userId } = await signupAndGetCookie(app, "admin@example.com");
+
+    const res = await request(app)
+      .delete(`/api/admin/admins/${userId}`)
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Cannot remove yourself as admin");
+  });
+
   it("returns 404 when promoting by nonexistent email", async () => {
     const { app } = buildTestApp();
     const { cookie } = await signupAndGetCookie(app, "admin@example.com");

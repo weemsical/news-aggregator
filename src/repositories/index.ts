@@ -1,4 +1,4 @@
-export type { ArticleRepository } from "./ArticleRepository";
+export type { ArticleRepository, ArticlePage, SourceScoreRow } from "./ArticleRepository";
 export type { HighlightRepository } from "./HighlightRepository";
 export type { UserRepository } from "./UserRepository";
 export type { FeedSourceRepository } from "./FeedSourceRepository";

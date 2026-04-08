@@ -124,11 +124,12 @@ export function AdminPanel() {
   }
 
   async function handleRemoveAdmin(userId: string) {
+    setAdminError("");
     try {
       await removeAdmin(userId);
       await loadAdmins();
-    } catch {
-      setAdminError("Failed to remove admin");
+    } catch (err: any) {
+      setAdminError(err.message || "Failed to remove admin");
     }
   }
 

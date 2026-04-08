@@ -11,6 +11,18 @@ export class ScoringService {
     const clusters = await this.clusterRepo.findByArticle(articleId);
     if (clusters.length === 0) return 0;
 
+    const allHighlightIds = clusters.flatMap((c) => c.highlightIds);
+    const allVotes = await this.voteRepo.findByHighlights(allHighlightIds);
+
+    // Group votes by highlight ID
+    const votesByHighlight = new Map<string, typeof allVotes>();
+    for (const vote of allVotes) {
+      if (vote.userId === "anon") continue;
+      const list = votesByHighlight.get(vote.highlightId) || [];
+      list.push(vote);
+      votesByHighlight.set(vote.highlightId, list);
+    }
+
     let totalScore = 0;
 
     for (const cluster of clusters) {
@@ -18,9 +30,8 @@ export class ScoringService {
       let disagrees = 0;
 
       for (const highlightId of cluster.highlightIds) {
-        const votes = await this.voteRepo.findByHighlight(highlightId);
+        const votes = votesByHighlight.get(highlightId) || [];
         for (const vote of votes) {
-          if (vote.userId === "anon") continue;
           if (vote.voteType === "agree") agrees++;
           else disagrees++;
         }

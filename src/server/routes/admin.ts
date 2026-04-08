@@ -136,6 +136,11 @@ export function adminRouter(
   });
 
   router.delete("/admins/:userId", async (req, res) => {
+    if (req.params.userId === req.user!.userId) {
+      res.status(400).json({ error: "Cannot remove yourself as admin" });
+      return;
+    }
+
     const user = await users.findById(req.params.userId);
     if (!user) {
       res.status(404).json({ error: "User not found" });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AnonymizedArticle } from "@types";
 import { loadArticles } from "./articleData";
 import { ArticleList } from "./ArticleList";
@@ -35,13 +35,13 @@ function AppContent() {
     });
   }, [sort, page]);
 
-  const filteredArticles = (() => {
+  const filteredArticles = useMemo(() => {
     const fromMs = fromDate ? new Date(fromDate).getTime() : 0;
     const toMs = toDate
       ? new Date(toDate).getTime() + 24 * 60 * 60 * 1000 - 1
       : Infinity;
     return articles.filter((a) => a.fetchedAt >= fromMs && a.fetchedAt <= toMs);
-  })();
+  }, [articles, fromDate, toDate]);
 
   const handleResetDates = () => {
     setFromDate("");

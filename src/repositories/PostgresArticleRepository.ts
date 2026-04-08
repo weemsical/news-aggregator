@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { Article } from "@types";
-import { ArticleRepository } from "./ArticleRepository";
+import { ArticleRepository, ArticlePage, SourceScoreRow } from "./ArticleRepository";
 
 export class PostgresArticleRepository implements ArticleRepository {
   constructor(private pool: Pool) {}
@@ -41,10 +41,7 @@ export class PostgresArticleRepository implements ArticleRepository {
   }
 
   async findAll(): Promise<Article[]> {
-    const { rows } = await this.pool.query(
-      "SELECT * FROM articles WHERE review_status = 'approved' ORDER BY fetched_at DESC"
-    );
-    return rows.map((row) => this.toArticle(row));
+    return this.findApproved();
   }
 
   async exists(id: string): Promise<boolean> {
@@ -76,6 +73,64 @@ export class PostgresArticleRepository implements ArticleRepository {
       params
     );
     return rows.map((row) => this.toArticle(row));
+  }
+
+  async findApprovedPaged(options: {
+    sort: "date" | "propaganda";
+    page: number;
+    pageSize: number;
+  }): Promise<ArticlePage> {
+    const orderBy =
+      options.sort === "propaganda"
+        ? "propaganda_score DESC, fetched_at DESC"
+        : "fetched_at DESC";
+    const offset = (options.page - 1) * options.pageSize;
+
+    const [dataResult, countResult] = await Promise.all([
+      this.pool.query(
+        `SELECT * FROM articles WHERE review_status = 'approved' ORDER BY ${orderBy} LIMIT $1 OFFSET $2`,
+        [options.pageSize, offset]
+      ),
+      this.pool.query(
+        "SELECT COUNT(*)::int AS count FROM articles WHERE review_status = 'approved'"
+      ),
+    ]);
+
+    return {
+      articles: dataResult.rows.map((row) => this.toArticle(row)),
+      total: countResult.rows[0].count,
+    };
+  }
+
+  async getScoresBySource(options?: { from?: number; to?: number }): Promise<SourceScoreRow[]> {
+    const conditions = ["review_status = 'approved'"];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (options?.from != null) {
+      conditions.push(`fetched_at >= $${paramIndex}`);
+      params.push(options.from);
+      paramIndex++;
+    }
+    if (options?.to != null) {
+      conditions.push(`fetched_at <= $${paramIndex}`);
+      params.push(options.to);
+      paramIndex++;
+    }
+
+    const { rows } = await this.pool.query(
+      `SELECT source_id, SUM(propaganda_score)::real AS total_score, COUNT(*)::int AS article_count
+       FROM articles WHERE ${conditions.join(" AND ")}
+       GROUP BY source_id
+       ORDER BY total_score DESC`,
+      params
+    );
+
+    return rows.map((row) => ({
+      sourceId: row.source_id,
+      totalScore: Number(row.total_score),
+      articleCount: row.article_count,
+    }));
   }
 
   async updateScore(id: string, score: number): Promise<void> {

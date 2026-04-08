@@ -1,5 +1,5 @@
 import { Article } from "@types";
-import { ArticleRepository } from "@repositories";
+import { ArticleRepository, ArticlePage, SourceScoreRow } from "@repositories";
 
 export class TestInMemoryArticleRepository implements ArticleRepository {
   private articles: Map<string, Article> = new Map();
@@ -21,9 +21,7 @@ export class TestInMemoryArticleRepository implements ArticleRepository {
   }
 
   async findAll(): Promise<Article[]> {
-    return Array.from(this.articles.values())
-      .filter((a) => a.reviewStatus === "approved")
-      .sort((a, b) => b.fetchedAt - a.fetchedAt);
+    return this.findApproved();
   }
 
   async exists(id: string): Promise<boolean> {
@@ -39,6 +37,40 @@ export class TestInMemoryArticleRepository implements ArticleRepository {
         return true;
       })
       .sort((a, b) => b.fetchedAt - a.fetchedAt);
+  }
+
+  async findApprovedPaged(options: {
+    sort: "date" | "propaganda";
+    page: number;
+    pageSize: number;
+  }): Promise<ArticlePage> {
+    const all = await this.findApproved();
+    all.sort((a, b) => {
+      if (options.sort === "propaganda") {
+        const diff = b.propagandaScore - a.propagandaScore;
+        if (diff !== 0) return diff;
+      }
+      return b.fetchedAt - a.fetchedAt;
+    });
+    const offset = (options.page - 1) * options.pageSize;
+    return {
+      articles: all.slice(offset, offset + options.pageSize),
+      total: all.length,
+    };
+  }
+
+  async getScoresBySource(options?: { from?: number; to?: number }): Promise<SourceScoreRow[]> {
+    const approved = await this.findApproved(options);
+    const map = new Map<string, { totalScore: number; articleCount: number }>();
+    for (const a of approved) {
+      const entry = map.get(a.sourceId) || { totalScore: 0, articleCount: 0 };
+      entry.totalScore += a.propagandaScore;
+      entry.articleCount++;
+      map.set(a.sourceId, entry);
+    }
+    return Array.from(map.entries())
+      .map(([sourceId, data]) => ({ sourceId, ...data }))
+      .sort((a, b) => b.totalScore - a.totalScore);
   }
 
   async updateScore(id: string, score: number): Promise<void> {

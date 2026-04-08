@@ -43,6 +43,12 @@ export class TestInMemoryVoteRepository implements VoteRepository {
     );
   }
 
+  async findByHighlights(highlightIds: string[]): Promise<Vote[]> {
+    return Array.from(this.votes.values()).filter(
+      (v) => highlightIds.includes(v.highlightId)
+    );
+  }
+
   async countByHighlight(highlightId: string): Promise<VoteCounts> {
     const votes = await this.findByHighlight(highlightId);
     return {

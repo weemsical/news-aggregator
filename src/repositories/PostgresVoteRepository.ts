@@ -46,6 +46,16 @@ export class PostgresVoteRepository implements VoteRepository {
     return rows.length > 0 ? this.toVote(rows[0]) : undefined;
   }
 
+  async findByHighlights(highlightIds: string[]): Promise<Vote[]> {
+    if (highlightIds.length === 0) return [];
+    const placeholders = highlightIds.map((_, i) => `$${i + 1}`).join(", ");
+    const { rows } = await this.pool.query(
+      `SELECT * FROM votes WHERE highlight_id IN (${placeholders}) ORDER BY created_at ASC`,
+      highlightIds
+    );
+    return rows.map((row) => this.toVote(row));
+  }
+
   async countByHighlight(highlightId: string): Promise<VoteCounts> {
     const { rows } = await this.pool.query(
       `SELECT
