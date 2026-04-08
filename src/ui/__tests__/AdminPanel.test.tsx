@@ -17,6 +17,15 @@ const mockDeleteFeedSource = apiClient.deleteFeedSource as jest.MockedFunction<
 const mockFetchNow = apiClient.fetchNow as jest.MockedFunction<
   typeof apiClient.fetchNow
 >;
+const mockFetchAdmins = apiClient.fetchAdmins as jest.MockedFunction<
+  typeof apiClient.fetchAdmins
+>;
+const mockAddAdminByEmail = apiClient.addAdminByEmail as jest.MockedFunction<
+  typeof apiClient.addAdminByEmail
+>;
+const mockRemoveAdmin = apiClient.removeAdmin as jest.MockedFunction<
+  typeof apiClient.removeAdmin
+>;
 
 const mockSources: apiClient.AdminFeedSource[] = [
   {
@@ -37,9 +46,14 @@ const mockSources: apiClient.AdminFeedSource[] = [
 
 beforeEach(() => {
   mockFetchAdminFeedSources.mockResolvedValue(mockSources);
+  mockFetchAdmins.mockResolvedValue([
+    { id: "admin-1", email: "admin@example.com", isAdmin: true },
+  ]);
   mockAddFeedSource.mockReset();
   mockDeleteFeedSource.mockReset();
   mockFetchNow.mockReset();
+  mockAddAdminByEmail.mockReset();
+  mockRemoveAdmin.mockReset();
 });
 
 describe("AdminPanel", () => {
@@ -149,6 +163,50 @@ describe("AdminPanel", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Failed to load feed sources")).toBeInTheDocument();
+    });
+  });
+
+  it("renders admin list", async () => {
+    render(<AdminPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText("admin@example.com")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Current Admins (1)")).toBeInTheDocument();
+  });
+
+  it("adds admin by email", async () => {
+    mockAddAdminByEmail.mockResolvedValue({
+      id: "admin-2",
+      email: "new@example.com",
+      isAdmin: true,
+    });
+
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("Manage Admins")).toBeInTheDocument();
+    });
+
+    await userEvent.type(screen.getByLabelText("User Email"), "new@example.com");
+    await userEvent.click(screen.getByRole("button", { name: "Add Admin" }));
+
+    await waitFor(() => {
+      expect(mockAddAdminByEmail).toHaveBeenCalledWith("new@example.com");
+    });
+  });
+
+  it("removes admin when Remove is clicked", async () => {
+    mockRemoveAdmin.mockResolvedValue(undefined);
+
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("admin@example.com")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+    await waitFor(() => {
+      expect(mockRemoveAdmin).toHaveBeenCalledWith("admin-1");
     });
   });
 });

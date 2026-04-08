@@ -55,7 +55,7 @@ export function authRouter(users: UserRepository): Router {
       sameSite: "lax" as const,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(201).json({ id: user.id, email: user.email });
+    res.status(201).json({ id: user.id, email: user.email, isAdmin: user.isAdmin });
   });
 
   router.post("/login", async (req, res) => {
@@ -85,7 +85,7 @@ export function authRouter(users: UserRepository): Router {
       sameSite: "lax" as const,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.json({ id: user.id, email: user.email });
+    res.json({ id: user.id, email: user.email, isAdmin: user.isAdmin });
   });
 
   router.post("/logout", (_req, res) => {

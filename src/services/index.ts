@@ -3,3 +3,5 @@ export { parseRssFeed } from "./RssParser";
 export { fetchFeed } from "./RssFetcher";
 export { calculateOverlapPercentage, findOverlaps } from "./OverlapService";
 export { ClusterService } from "./ClusterService";
+export { ScoringService } from "./ScoringService";
+export { dateSeededHash } from "./dateSeededShuffle";

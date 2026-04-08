@@ -8,11 +8,14 @@ import {
   login,
   logout,
   fetchCurrentUser,
-  fetchLeaderboard,
+  fetchScores,
   fetchAdminFeedSources,
   addFeedSource,
   deleteFeedSource,
   fetchNow,
+  fetchAdmins,
+  addAdminByEmail,
+  removeAdmin,
 } from "../apiClient";
 
 const mockArticles = [
@@ -29,16 +32,32 @@ beforeEach(() => {
 });
 
 describe("fetchArticles", () => {
-  it("returns articles from /api/articles with credentials", async () => {
+  it("returns articles response from /api/articles with credentials", async () => {
+    const mockResponse = { articles: mockArticles, total: 2, page: 1, pageSize: 20 };
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockArticles),
+      json: () => Promise.resolve(mockResponse),
     });
 
-    const articles = await fetchArticles();
+    const result = await fetchArticles();
 
     expect(global.fetch).toHaveBeenCalledWith("/api/articles", { credentials: "include" });
-    expect(articles).toEqual(mockArticles);
+    expect(result).toEqual(mockResponse);
+  });
+
+  it("passes sort and page as query params", async () => {
+    const mockResponse = { articles: mockArticles, total: 2, page: 2, pageSize: 20 };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    });
+
+    await fetchArticles({ sort: "propaganda", page: 2 });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/articles?sort=propaganda&page=2",
+      { credentials: "include" }
+    );
   });
 
   it("throws when the response is not ok", async () => {
@@ -236,27 +255,88 @@ describe("fetchCurrentUser", () => {
   });
 });
 
-describe("fetchLeaderboard", () => {
-  it("returns leaderboard entries from /api/leaderboard", async () => {
-    const mockEntries = [
-      { sourceId: "fox-news", sourceName: "Fox News", flagCount: 5 },
-      { sourceId: "cnn", sourceName: "CNN", flagCount: 3 },
+describe("fetchScores", () => {
+  it("returns scores from /api/scores", async () => {
+    const mockScores = [
+      { sourceId: "fox-news", sourceName: "Fox News", totalScore: 8, averageScore: 4, articleCount: 2 },
     ];
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockEntries),
+      json: () => Promise.resolve(mockScores),
     });
 
-    const entries = await fetchLeaderboard();
+    const scores = await fetchScores();
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/leaderboard", { credentials: "include" });
-    expect(entries).toEqual(mockEntries);
+    expect(global.fetch).toHaveBeenCalledWith("/api/scores", { credentials: "include" });
+    expect(scores).toEqual(mockScores);
+  });
+
+  it("passes date range as query params", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+
+    await fetchScores({ from: "2025-01-01", to: "2025-06-01" });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/scores?from=2025-01-01&to=2025-06-01",
+      { credentials: "include" }
+    );
   });
 
   it("throws when the response is not ok", async () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
 
-    await expect(fetchLeaderboard()).rejects.toThrow("Failed to fetch leaderboard");
+    await expect(fetchScores()).rejects.toThrow("Failed to fetch scores");
+  });
+});
+
+describe("fetchAdmins", () => {
+  it("returns admin users from /api/admin/admins", async () => {
+    const mockAdmins = [{ id: "u1", email: "admin@test.com", isAdmin: true }];
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockAdmins),
+    });
+
+    const admins = await fetchAdmins();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/admins", { credentials: "include" });
+    expect(admins).toEqual(mockAdmins);
+  });
+});
+
+describe("addAdminByEmail", () => {
+  it("posts email and returns admin user", async () => {
+    const mockAdmin = { id: "u2", email: "new@test.com", isAdmin: true };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockAdmin),
+    });
+
+    const result = await addAdminByEmail("new@test.com");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/admins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email: "new@test.com" }),
+    });
+    expect(result).toEqual(mockAdmin);
+  });
+});
+
+describe("removeAdmin", () => {
+  it("sends DELETE request", async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+    await removeAdmin("u1");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/admin/admins/u1", {
+      method: "DELETE",
+      credentials: "include",
+    });
   });
 });
 

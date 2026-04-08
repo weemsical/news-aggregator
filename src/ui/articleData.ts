@@ -1,19 +1,28 @@
 import { anonymize } from "@services";
 import { seedArticles } from "@data";
 import { AnonymizedArticle } from "@types";
-import { fetchArticles } from "./apiClient";
+import { fetchArticles, ArticlesResponse } from "./apiClient";
 
-export async function loadArticles(): Promise<AnonymizedArticle[]> {
+export async function loadArticles(
+  options?: { sort?: string; page?: number }
+): Promise<ArticlesResponse> {
   try {
-    const articles = await fetchArticles();
-    if (articles.length > 0) {
-      return articles;
+    const response = await fetchArticles(options);
+    if (response.articles.length > 0 || (options?.page && options.page > 1)) {
+      return response;
     }
   } catch {
     // API not available — fall through to seed data
   }
 
-  return seedArticles
+  const all = seedArticles
     .map(anonymize)
     .sort((a, b) => b.fetchedAt - a.fetchedAt);
+
+  return {
+    articles: all,
+    total: all.length,
+    page: 1,
+    pageSize: 20,
+  };
 }

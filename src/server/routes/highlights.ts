@@ -2,7 +2,7 @@ import { Router, Request } from "express";
 import { ArticleRepository, HighlightRepository, HighlightClusterRepository, VoteRepository } from "@repositories";
 import { requireAuth, optionalAuth, anonRateLimit } from "@middleware";
 import { RequestHandler } from "express";
-import { findOverlaps, ClusterService } from "@services";
+import { findOverlaps, ClusterService, ScoringService } from "@services";
 import crypto from "crypto";
 
 export function highlightsRouter(
@@ -10,7 +10,8 @@ export function highlightsRouter(
   highlightRepo: HighlightRepository,
   rateLimitMiddleware: RequestHandler = anonRateLimit,
   clusterRepo?: HighlightClusterRepository,
-  voteRepo?: VoteRepository
+  voteRepo?: VoteRepository,
+  scoringService?: ScoringService
 ): Router {
   const router = Router({ mergeParams: true });
 
@@ -120,6 +121,9 @@ export function highlightsRouter(
     // Trigger cluster recalculation
     if (clusterService && !isAnonymous) {
       await clusterService.recalculateClusters(articleId, paragraphIndex);
+      if (scoringService) {
+        await scoringService.recalculateScore(articleId);
+      }
     }
 
     res.status(201).json(highlight);
@@ -130,7 +134,8 @@ export function highlightsRouter(
 
 export function highlightActionsRouter(
   highlightRepo: HighlightRepository,
-  clusterService?: ClusterService | null
+  clusterService?: ClusterService | null,
+  scoringService?: ScoringService
 ): Router {
   const router = Router();
 
@@ -181,6 +186,9 @@ export function highlightActionsRouter(
     // Trigger cluster recalculation
     if (clusterService) {
       await clusterService.recalculateClusters(highlight.articleId, highlight.paragraphIndex);
+      if (scoringService) {
+        await scoringService.recalculateScore(highlight.articleId);
+      }
     }
 
     res.status(204).send();

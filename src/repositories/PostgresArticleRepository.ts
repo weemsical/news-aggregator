@@ -55,6 +55,36 @@ export class PostgresArticleRepository implements ArticleRepository {
     return rows.length > 0;
   }
 
+  async findApproved(options?: { from?: number; to?: number }): Promise<Article[]> {
+    const conditions = ["review_status = 'approved'"];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (options?.from != null) {
+      conditions.push(`fetched_at >= $${paramIndex}`);
+      params.push(options.from);
+      paramIndex++;
+    }
+    if (options?.to != null) {
+      conditions.push(`fetched_at <= $${paramIndex}`);
+      params.push(options.to);
+      paramIndex++;
+    }
+
+    const { rows } = await this.pool.query(
+      `SELECT * FROM articles WHERE ${conditions.join(" AND ")} ORDER BY fetched_at DESC`,
+      params
+    );
+    return rows.map((row) => this.toArticle(row));
+  }
+
+  async updateScore(id: string, score: number): Promise<void> {
+    await this.pool.query(
+      "UPDATE articles SET propaganda_score = $1 WHERE id = $2",
+      [score, id]
+    );
+  }
+
   async count(): Promise<number> {
     const { rows } = await this.pool.query("SELECT COUNT(*)::int AS count FROM articles");
     return rows[0].count;

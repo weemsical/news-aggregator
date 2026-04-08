@@ -4,4 +4,5 @@ export { highlightsRouter, highlightActionsRouter } from "./highlights";
 export { votesRouter } from "./votes";
 export { commentsRouter } from "./comments";
 export { leaderboardRouter } from "./leaderboard";
+export { scoresRouter } from "./scores";
 export { adminRouter } from "./admin";

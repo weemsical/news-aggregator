@@ -4,44 +4,50 @@ import { App } from "../App";
 import * as apiClient from "../apiClient";
 
 jest.mock("../articleData", () => ({
-  loadArticles: jest.fn().mockResolvedValue([
-    {
-      id: "mock-1",
-      rawArticleId: "mock-1",
-      title: "Mock Article One",
-      subtitle: "Mock subtitle",
-      body: ["Paragraph A.", "Paragraph B.", "Paragraph C."],
-      sourceTags: ["testing"],
-      fetchedAt: 1738000000000,
-      reviewStatus: "approved",
-      propagandaScore: 0,
-    },
-    {
-      id: "mock-2",
-      rawArticleId: "mock-2",
-      title: "Mock Article Two",
-      body: ["Content here."],
-      sourceTags: ["mock"],
-      fetchedAt: 1738100000000,
-      reviewStatus: "approved",
-      propagandaScore: 0,
-    },
-  ]),
+  loadArticles: jest.fn().mockResolvedValue({
+    articles: [
+      {
+        id: "mock-1",
+        rawArticleId: "mock-1",
+        title: "Mock Article One",
+        subtitle: "Mock subtitle",
+        body: ["Paragraph A.", "Paragraph B.", "Paragraph C."],
+        sourceTags: ["testing"],
+        fetchedAt: 1738000000000,
+        reviewStatus: "approved",
+        propagandaScore: 0,
+      },
+      {
+        id: "mock-2",
+        rawArticleId: "mock-2",
+        title: "Mock Article Two",
+        body: ["Content here."],
+        sourceTags: ["mock"],
+        fetchedAt: 1738100000000,
+        reviewStatus: "approved",
+        propagandaScore: 0,
+      },
+    ],
+    total: 2,
+    page: 1,
+    pageSize: 20,
+  }),
 }));
 
 jest.mock("../apiClient", () => ({
   ...jest.requireActual("../apiClient"),
   fetchCurrentUser: jest.fn(),
   fetchHighlights: jest.fn().mockResolvedValue([]),
-  fetchLeaderboard: jest.fn().mockResolvedValue([]),
+  fetchScores: jest.fn().mockResolvedValue([]),
   fetchAdminFeedSources: jest.fn().mockResolvedValue([]),
+  fetchAdmins: jest.fn().mockResolvedValue([]),
 }));
 
 const mockFetchCurrentUser = apiClient.fetchCurrentUser as jest.MockedFunction<
   typeof apiClient.fetchCurrentUser
 >;
-const mockFetchLeaderboard = apiClient.fetchLeaderboard as jest.MockedFunction<
-  typeof apiClient.fetchLeaderboard
+const mockFetchScores = apiClient.fetchScores as jest.MockedFunction<
+  typeof apiClient.fetchScores
 >;
 
 beforeEach(() => {
@@ -112,13 +118,13 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Log Out" })).toBeInTheDocument();
   });
 
-  it("shows Articles, Leaderboard, and How It Works nav buttons", async () => {
+  it("shows Articles, Scores, and How It Works nav buttons", async () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.getByText("Mock Article One")).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Articles" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scores" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "How It Works" })).toBeInTheDocument();
   });
 
@@ -136,41 +142,36 @@ describe("App", () => {
     expect(screen.queryByText("Mock Article One")).not.toBeInTheDocument();
   });
 
-  it("switches to leaderboard view when Leaderboard is clicked", async () => {
-    mockFetchLeaderboard.mockResolvedValue([
-      { sourceId: "fox-news", sourceName: "Fox News", flagCount: 5 },
-    ]);
+  it("switches to scores view when Scores is clicked", async () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.getByText("Mock Article One")).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
+    await userEvent.click(screen.getByRole("button", { name: "Scores" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Source Leaderboard")).toBeInTheDocument();
+      expect(screen.getByText("Source Scores")).toBeInTheDocument();
     });
-    expect(screen.getByText("Fox News")).toBeInTheDocument();
     expect(screen.queryByText("Mock Article One")).not.toBeInTheDocument();
   });
 
   it("switches back to articles view when Articles is clicked", async () => {
-    mockFetchLeaderboard.mockResolvedValue([]);
     render(<App />);
     await waitFor(() => {
       expect(screen.getByText("Mock Article One")).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
+    await userEvent.click(screen.getByRole("button", { name: "Scores" }));
     await waitFor(() => {
-      expect(screen.getByText("Source Leaderboard")).toBeInTheDocument();
+      expect(screen.getByText("Source Scores")).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Articles" }));
     await waitFor(() => {
       expect(screen.getByText("Mock Article One")).toBeInTheDocument();
     });
-    expect(screen.queryByText("Source Leaderboard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Source Scores")).not.toBeInTheDocument();
   });
 
   it("renders the date filter inputs", async () => {

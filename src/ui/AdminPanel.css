@@ -168,3 +168,9 @@
 .admin-panel__fetch-error {
   color: #c0392b;
 }
+
+.admin-panel__divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 2rem 0;
+}

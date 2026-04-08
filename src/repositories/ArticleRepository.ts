@@ -7,4 +7,6 @@ export interface ArticleRepository {
   findAll(): Promise<Article[]>;
   exists(id: string): Promise<boolean>;
   count(): Promise<number>;
+  updateScore(id: string, score: number): Promise<void>;
+  findApproved(options?: { from?: number; to?: number }): Promise<Article[]>;
 }

@@ -151,7 +151,7 @@ describe("Admin management", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 400 when userId missing from promote request", async () => {
+  it("returns 400 when neither email nor userId provided", async () => {
     const { app } = buildTestApp();
     const { cookie } = await signupAndGetCookie(app, "admin@example.com");
 
@@ -161,5 +161,32 @@ describe("Admin management", () => {
       .send({});
 
     expect(res.status).toBe(400);
+  });
+
+  it("admin can promote another user by email", async () => {
+    const { app } = buildTestApp();
+    const { cookie: adminCookie } = await signupAndGetCookie(app, "admin@example.com");
+    await signupAndGetCookie(app, "new@example.com");
+
+    const res = await request(app)
+      .post("/api/admin/admins")
+      .set("Cookie", adminCookie)
+      .send({ email: "new@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.isAdmin).toBe(true);
+    expect(res.body.email).toBe("new@example.com");
+  });
+
+  it("returns 404 when promoting by nonexistent email", async () => {
+    const { app } = buildTestApp();
+    const { cookie } = await signupAndGetCookie(app, "admin@example.com");
+
+    const res = await request(app)
+      .post("/api/admin/admins")
+      .set("Cookie", cookie)
+      .send({ email: "nobody@example.com" });
+
+    expect(res.status).toBe(404);
   });
 });

@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
-import { AnonymizedArticle, LeaderboardEntry } from "@types";
+import { useState, useEffect } from "react";
+import { AnonymizedArticle } from "@types";
 import { loadArticles } from "./articleData";
-import { fetchLeaderboard } from "./apiClient";
 import { ArticleList } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
-import { SourceLeaderboard } from "./SourceLeaderboard";
+import { ScoresPage } from "./ScoresPage";
 import { AdminPanel } from "./AdminPanel";
 import { HowItWorks } from "./HowItWorks";
 import { DateFilter } from "./DateFilter";
@@ -12,46 +11,47 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { AuthForm } from "./AuthForm";
 import "./App.css";
 
-type View = "articles" | "leaderboard" | "how-it-works" | "admin";
+type View = "articles" | "scores" | "how-it-works" | "admin";
 
 function AppContent() {
   const { user, loading: authLoading, logout } = useAuth();
   const [articles, setArticles] = useState<AnonymizedArticle[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [view, setView] = useState<View>("articles");
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [sort, setSort] = useState("date");
+  const [page, setPage] = useState(1);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  const filteredArticles = useMemo(() => {
+  useEffect(() => {
+    setLoading(true);
+    loadArticles({ sort, page }).then((response) => {
+      setArticles(response.articles);
+      setTotal(response.total);
+      setLoading(false);
+    });
+  }, [sort, page]);
+
+  const filteredArticles = (() => {
     const fromMs = fromDate ? new Date(fromDate).getTime() : 0;
     const toMs = toDate
       ? new Date(toDate).getTime() + 24 * 60 * 60 * 1000 - 1
       : Infinity;
     return articles.filter((a) => a.fetchedAt >= fromMs && a.fetchedAt <= toMs);
-  }, [articles, fromDate, toDate]);
+  })();
 
   const handleResetDates = () => {
     setFromDate("");
     setToDate("");
   };
 
-  useEffect(() => {
-    loadArticles().then((loaded) => {
-      setArticles(loaded);
-      setLoading(false);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (view === "leaderboard") {
-      fetchLeaderboard()
-        .then(setLeaderboard)
-        .catch(() => setLeaderboard([]));
-    }
-  }, [view]);
+  const handleSortChange = (newSort: string) => {
+    setSort(newSort);
+    setPage(1);
+  };
 
   const selectedArticle = selectedArticleId
     ? articles.find((a) => a.id === selectedArticleId)
@@ -97,10 +97,10 @@ function AppContent() {
             Articles
           </button>
           <button
-            className={`app__nav-btn${view === "leaderboard" ? " app__nav-btn--active" : ""}`}
-            onClick={() => setView("leaderboard")}
+            className={`app__nav-btn${view === "scores" ? " app__nav-btn--active" : ""}`}
+            onClick={() => setView("scores")}
           >
-            Leaderboard
+            Scores
           </button>
           <button
             className={`app__nav-btn${view === "how-it-works" ? " app__nav-btn--active" : ""}`}
@@ -123,8 +123,8 @@ function AppContent() {
           <AdminPanel />
         ) : view === "how-it-works" ? (
           <HowItWorks />
-        ) : view === "leaderboard" ? (
-          <SourceLeaderboard entries={leaderboard} />
+        ) : view === "scores" ? (
+          <ScoresPage />
         ) : loading ? (
           <p className="app__loading">Loading articles...</p>
         ) : selectedArticle ? (
@@ -141,11 +141,17 @@ function AppContent() {
               onToDateChange={setToDate}
               onReset={handleResetDates}
               filteredCount={filteredArticles.length}
-              totalCount={articles.length}
+              totalCount={total}
             />
             <ArticleList
               articles={filteredArticles}
               onSelectArticle={setSelectedArticleId}
+              sort={sort}
+              onSortChange={handleSortChange}
+              page={page}
+              total={total}
+              pageSize={20}
+              onPageChange={setPage}
             />
           </>
         )}

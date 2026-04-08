@@ -1,4 +1,4 @@
-import { AnonymizedArticle, Highlight, LeaderboardEntry } from "@types";
+import { AnonymizedArticle, Highlight, SourceScore } from "@types";
 
 export interface AuthUser {
   id: string;
@@ -19,8 +19,28 @@ export interface FetchNowResult {
   newArticlesSaved: number;
 }
 
-export async function fetchArticles(): Promise<AnonymizedArticle[]> {
-  const response = await fetch("/api/articles", { credentials: "include" });
+export interface AdminUser {
+  id: string;
+  email: string;
+  isAdmin: boolean;
+}
+
+export interface ArticlesResponse {
+  articles: AnonymizedArticle[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function fetchArticles(
+  options?: { sort?: string; page?: number }
+): Promise<ArticlesResponse> {
+  const params = new URLSearchParams();
+  if (options?.sort) params.set("sort", options.sort);
+  if (options?.page) params.set("page", String(options.page));
+  const qs = params.toString();
+  const url = qs ? `/api/articles?${qs}` : "/api/articles";
+  const response = await fetch(url, { credentials: "include" });
   if (!response.ok) throw new Error("Failed to fetch articles");
   return response.json();
 }
@@ -123,9 +143,16 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
   return response.json();
 }
 
-export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
-  const response = await fetch("/api/leaderboard", { credentials: "include" });
-  if (!response.ok) throw new Error("Failed to fetch leaderboard");
+export async function fetchScores(
+  options?: { from?: string; to?: string }
+): Promise<SourceScore[]> {
+  const params = new URLSearchParams();
+  if (options?.from) params.set("from", options.from);
+  if (options?.to) params.set("to", options.to);
+  const qs = params.toString();
+  const url = qs ? `/api/scores?${qs}` : "/api/scores";
+  const response = await fetch(url, { credentials: "include" });
+  if (!response.ok) throw new Error("Failed to fetch scores");
   return response.json();
 }
 
@@ -174,4 +201,34 @@ export async function fetchNow(sourceId: string): Promise<FetchNowResult> {
     throw new Error(body.error || "Failed to fetch articles");
   }
   return response.json();
+}
+
+export async function fetchAdmins(): Promise<AdminUser[]> {
+  const response = await fetch("/api/admin/admins", {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch admins");
+  return response.json();
+}
+
+export async function addAdminByEmail(email: string): Promise<AdminUser> {
+  const response = await fetch("/api/admin/admins", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to add admin");
+  }
+  return response.json();
+}
+
+export async function removeAdmin(userId: string): Promise<void> {
+  const response = await fetch(`/api/admin/admins/${userId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to remove admin");
 }

@@ -30,6 +30,24 @@ export class TestInMemoryArticleRepository implements ArticleRepository {
     return this.articles.has(id);
   }
 
+  async findApproved(options?: { from?: number; to?: number }): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .filter((a) => {
+        if (a.reviewStatus !== "approved") return false;
+        if (options?.from != null && a.fetchedAt < options.from) return false;
+        if (options?.to != null && a.fetchedAt > options.to) return false;
+        return true;
+      })
+      .sort((a, b) => b.fetchedAt - a.fetchedAt);
+  }
+
+  async updateScore(id: string, score: number): Promise<void> {
+    const article = this.articles.get(id);
+    if (article) {
+      this.articles.set(id, { ...article, propagandaScore: score });
+    }
+  }
+
   async count(): Promise<number> {
     return this.articles.size;
   }

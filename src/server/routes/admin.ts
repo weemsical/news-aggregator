@@ -114,13 +114,18 @@ export function adminRouter(
   });
 
   router.post("/admins", async (req, res) => {
-    const { userId } = req.body;
-    if (!userId || !String(userId).trim()) {
-      res.status(400).json({ error: "userId is required" });
+    const { userId, email } = req.body;
+
+    let user;
+    if (email && String(email).trim()) {
+      user = await users.findByEmail(String(email).trim());
+    } else if (userId && String(userId).trim()) {
+      user = await users.findById(String(userId));
+    } else {
+      res.status(400).json({ error: "email or userId is required" });
       return;
     }
 
-    const user = await users.findById(String(userId));
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;

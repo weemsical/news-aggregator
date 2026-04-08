@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import {
   AdminFeedSource,
+  AdminUser,
   FetchNowResult,
   fetchAdminFeedSources,
   addFeedSource,
   deleteFeedSource,
   fetchNow,
+  fetchAdmins,
+  addAdminByEmail,
+  removeAdmin,
 } from "./apiClient";
 import "./AdminPanel.css";
 
@@ -25,8 +29,15 @@ export function AdminPanel() {
     Record<string, FetchNowResult | string>
   >({});
 
+  // Admin management state
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminSubmitting, setAdminSubmitting] = useState(false);
+  const [adminError, setAdminError] = useState("");
+
   useEffect(() => {
     loadSources();
+    loadAdmins();
   }, []);
 
   async function loadSources() {
@@ -38,6 +49,15 @@ export function AdminPanel() {
       setError("Failed to load feed sources");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAdmins() {
+    try {
+      const data = await fetchAdmins();
+      setAdmins(data);
+    } catch {
+      // Silently fail — admin list is secondary
     }
   }
 
@@ -85,6 +105,30 @@ export function AdminPanel() {
       setFetchResults((prev) => ({ ...prev, [sid]: result }));
     } catch (err: any) {
       setFetchResults((prev) => ({ ...prev, [sid]: err.message }));
+    }
+  }
+
+  async function handleAddAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    setAdminError("");
+    setAdminSubmitting(true);
+    try {
+      await addAdminByEmail(adminEmail.trim());
+      setAdminEmail("");
+      await loadAdmins();
+    } catch (err: any) {
+      setAdminError(err.message);
+    } finally {
+      setAdminSubmitting(false);
+    }
+  }
+
+  async function handleRemoveAdmin(userId: string) {
+    try {
+      await removeAdmin(userId);
+      await loadAdmins();
+    } catch {
+      setAdminError("Failed to remove admin");
     }
   }
 
@@ -203,6 +247,54 @@ export function AdminPanel() {
                   )}
                 </div>
               )}
+          </li>
+        ))}
+      </ul>
+
+      <hr className="admin-panel__divider" />
+
+      <h2 className="admin-panel__title">Manage Admins</h2>
+
+      <form className="admin-panel__form" onSubmit={handleAddAdmin}>
+        <h3 className="admin-panel__form-title">Add Admin</h3>
+        <div className="admin-panel__field">
+          <label htmlFor="adminEmail">User Email</label>
+          <input
+            id="adminEmail"
+            type="email"
+            value={adminEmail}
+            onChange={(e) => setAdminEmail(e.target.value)}
+            placeholder="user@example.com"
+            required
+          />
+        </div>
+        {adminError && <p className="admin-panel__error">{adminError}</p>}
+        <button
+          type="submit"
+          className="admin-panel__submit"
+          disabled={adminSubmitting}
+        >
+          {adminSubmitting ? "Adding..." : "Add Admin"}
+        </button>
+      </form>
+
+      <h3 className="admin-panel__list-title">
+        Current Admins ({admins.length})
+      </h3>
+      <ul className="admin-panel__list">
+        {admins.map((admin) => (
+          <li key={admin.id} className="admin-panel__source">
+            <div className="admin-panel__source-info">
+              <span className="admin-panel__source-name">{admin.email}</span>
+            </div>
+            <div className="admin-panel__source-actions">
+              <button
+                className="admin-panel__delete-btn"
+                onClick={() => handleRemoveAdmin(admin.id)}
+              >
+                Remove
+              </button>
+            </div>
           </li>
         ))}
       </ul>
