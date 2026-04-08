@@ -33,11 +33,17 @@ export function authRouter(users: UserRepository): Router {
       return;
     }
 
+    const adminEmails = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
     const passwordHash = await hashPassword(password);
     const user = {
       id: crypto.randomUUID(),
       email,
       passwordHash,
+      isAdmin: adminEmails.includes(email.toLowerCase()),
       createdAt: Date.now(),
     };
     await users.save(user);
@@ -93,13 +99,7 @@ export function authRouter(users: UserRepository): Router {
       res.status(401).json({ error: "User not found" });
       return;
     }
-    const adminEmails = (process.env.ADMIN_EMAILS || "")
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean);
-    const isAdmin = adminEmails.includes(user.email.toLowerCase());
-
-    res.json({ id: user.id, email: user.email, isAdmin });
+    res.json({ id: user.id, email: user.email, isAdmin: user.isAdmin });
   });
 
   return router;

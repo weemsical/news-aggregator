@@ -23,6 +23,18 @@ export class TestInMemoryUserRepository implements UserRepository {
     return this.users.get(id);
   }
 
+  async findAdmins(): Promise<User[]> {
+    return Array.from(this.users.values()).filter((u) => u.isAdmin);
+  }
+
+  async setAdmin(id: string, isAdmin: boolean): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, isAdmin };
+    this.users.set(id, updated);
+    return updated;
+  }
+
   async count(): Promise<number> {
     return this.users.size;
   }

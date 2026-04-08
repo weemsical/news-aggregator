@@ -5,6 +5,7 @@ const makeUser = (overrides: Partial<User> = {}): User => ({
   id: "user-1",
   email: "alice@example.com",
   passwordHash: "$2b$10$fakehashvalue1234567890",
+  isAdmin: false,
   createdAt: 1740000060000,
   ...overrides,
 });

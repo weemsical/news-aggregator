@@ -108,5 +108,38 @@ export function adminRouter(
     }
   });
 
+  router.get("/admins", async (_req, res) => {
+    const admins = await users.findAdmins();
+    res.json(admins.map((u) => ({ id: u.id, email: u.email, isAdmin: u.isAdmin })));
+  });
+
+  router.post("/admins", async (req, res) => {
+    const { userId } = req.body;
+    if (!userId || !String(userId).trim()) {
+      res.status(400).json({ error: "userId is required" });
+      return;
+    }
+
+    const user = await users.findById(String(userId));
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const updated = await users.setAdmin(user.id, true);
+    res.json({ id: updated!.id, email: updated!.email, isAdmin: updated!.isAdmin });
+  });
+
+  router.delete("/admins/:userId", async (req, res) => {
+    const user = await users.findById(req.params.userId);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const updated = await users.setAdmin(user.id, false);
+    res.json({ id: updated!.id, email: updated!.email, isAdmin: updated!.isAdmin });
+  });
+
   return router;
 }
