@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "dev": "concurrently \"npm run dev:server\" \"vite\"",
-    "dev:server": "DATABASE_URL=postgres://postgres:postgres@localhost:5432/icbs JWT_SECRET=dev-secret ADMIN_EMAILS=admin@example.com npx tsx src/server/index.ts",
+    "dev:server": "npx tsx --env-file=.env src/server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "fetch-articles": "npx tsx src/scripts/fetchArticles.ts",

@@ -3,12 +3,14 @@ import { ArticleRepository } from "../../repositories/ArticleRepository";
 import { HighlightRepository } from "../../repositories/HighlightRepository";
 import { requireAuth, optionalAuth } from "../middleware/requireAuth";
 import { anonRateLimit } from "../middleware/anonRateLimit";
+import { RequestHandler } from "express";
 
 let highlightIdCounter = 0;
 
 export function highlightsRouter(
   articleRepo: ArticleRepository,
-  highlightRepo: HighlightRepository
+  highlightRepo: HighlightRepository,
+  rateLimitMiddleware: RequestHandler = anonRateLimit
 ): Router {
   const router = Router({ mergeParams: true });
 
@@ -25,7 +27,7 @@ export function highlightsRouter(
     }
   });
 
-  router.post("/", optionalAuth, anonRateLimit, async (req: Request<{ id: string }>, res) => {
+  router.post("/", optionalAuth, rateLimitMiddleware, async (req: Request<{ id: string }>, res) => {
     const articleId = req.params.id;
     const exists = await articleRepo.exists(articleId);
     if (!exists) {

@@ -256,7 +256,7 @@ describe("ArticleReader — auth & toggle", () => {
     });
   });
 
-  it("shows only user's highlights on My Highlights toggle", async () => {
+  it("defaults to My Highlights and shows only own highlights", async () => {
     mockFetchHighlights.mockResolvedValue([
       {
         id: "h-1",
@@ -293,15 +293,56 @@ describe("ArticleReader — auth & toggle", () => {
     );
 
     await waitFor(() => {
-      expect(container.querySelectorAll("mark")).toHaveLength(2);
-    });
-
-    await userEvent.click(screen.getByText("My Highlights"));
-
-    await waitFor(() => {
       const marks = container.querySelectorAll("mark");
       expect(marks).toHaveLength(1);
       expect(marks[0].textContent).toBe("First paragraph");
+    });
+  });
+
+  it("shows all highlights when toggled to All Highlights", async () => {
+    mockFetchHighlights.mockResolvedValue([
+      {
+        id: "h-1",
+        articleId: "reader-1",
+        userId: "user-1",
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 15,
+        highlightedText: "First paragraph",
+        explanation: "Mine",
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      {
+        id: "h-2",
+        articleId: "reader-1",
+        userId: "other-user",
+        paragraphIndex: 1,
+        startOffset: 0,
+        endOffset: 16,
+        highlightedText: "Second paragraph",
+        explanation: "Theirs",
+        isEdited: false,
+        originalExplanation: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    ]);
+
+    const { container } = render(
+      <ArticleReader article={article} onBack={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(container.querySelectorAll("mark")).toHaveLength(1);
+    });
+
+    await userEvent.click(screen.getByText("All Highlights"));
+
+    await waitFor(() => {
+      expect(container.querySelectorAll("mark")).toHaveLength(2);
     });
   });
 
@@ -367,6 +408,75 @@ describe("ArticleReader — auth & toggle", () => {
       const marks = container.querySelectorAll("mark");
       expect(marks).toHaveLength(1);
       expect(marks[0].textContent).toBe("First");
+    });
+  });
+
+  it("shows error message when highlight creation fails", async () => {
+    mockCreateHighlight.mockRejectedValueOnce(new Error("Too many highlights"));
+
+    const mockRect = { top: 50, left: 100, bottom: 70, right: 200 } as DOMRect;
+    (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
+      text: "First",
+      rect: mockRect,
+      paragraphIndex: 0,
+      startOffset: 0,
+      endOffset: 5,
+    });
+
+    const { container } = render(
+      <ArticleReader article={article} onBack={() => {}} />
+    );
+
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
+
+    fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
+    await userEvent.type(screen.getByRole("textbox"), "Loaded language");
+    await userEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+      expect(screen.getByText(/failed to save highlight/i)).toBeInTheDocument();
+    });
+  });
+
+  it("clears error message when popover is dismissed", async () => {
+    mockCreateHighlight.mockRejectedValueOnce(new Error("Server error"));
+
+    const mockRect = { top: 50, left: 100, bottom: 70, right: 200 } as DOMRect;
+    (selectionModule.getSelectionInfo as jest.Mock)
+      .mockReturnValueOnce({
+        text: "First",
+        rect: mockRect,
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 5,
+      })
+      .mockReturnValueOnce({
+        text: "Second",
+        rect: mockRect,
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 6,
+      });
+
+    const { container } = render(
+      <ArticleReader article={article} onBack={() => {}} />
+    );
+
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
+
+    fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
+    await userEvent.type(screen.getByRole("textbox"), "Loaded language");
+    await userEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+    });
+
+    fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
   });
 });

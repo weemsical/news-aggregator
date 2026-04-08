@@ -29,7 +29,8 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
   const { user } = useAuth();
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [highlightView, setHighlightView] = useState<HighlightView>(user ? "all" : "none");
+  const [highlightView, setHighlightView] = useState<HighlightView>(user ? "mine" : "none");
+  const [error, setError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
       .map((h) => ({ id: h.id, startOffset: h.startOffset, endOffset: h.endOffset, userId: h.userId }));
 
   const handleMouseUp = () => {
+    setError(null);
     const info = getSelectionInfo(bodyRef.current);
     if (!info || !bodyRef.current) {
       return;
@@ -91,7 +93,10 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
         }
       }
     } catch {
-      // Highlight operation failed — silently ignore
+      setError("Failed to save highlight. Please try again.");
+      window.getSelection()?.removeAllRanges();
+      setPopover(null);
+      return;
     }
 
     window.getSelection()?.removeAllRanges();
@@ -105,7 +110,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
       await deleteHighlight(popover.highlightId);
       setHighlights((prev) => prev.filter((h) => h.id !== popover.highlightId));
     } catch {
-      // Delete failed — silently ignore
+      setError("Failed to delete highlight. Please try again.");
     }
 
     setPopover(null);
@@ -132,6 +137,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
           </span>
         ))}
       </div>
+      {error && <p className="article-reader__error" role="alert">{error}</p>}
       <HighlightToggle value={highlightView} onChange={setHighlightView} isAnonymous={!user} />
       <div
         className="article-reader__body"

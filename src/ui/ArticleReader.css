@@ -46,6 +46,15 @@
   font-size: 0.8rem;
 }
 
+.article-reader__error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
 .article-reader__body {
   position: relative;
 }
