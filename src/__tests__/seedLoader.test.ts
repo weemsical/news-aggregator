@@ -1,7 +1,6 @@
 import { loadSeedData } from "../server/seedLoader";
-import { TestInMemoryArticleRepository } from "./helpers/TestInMemoryArticleRepository";
-import { TestInMemoryRawArticleRepository } from "./helpers/TestInMemoryRawArticleRepository";
-import { seedArticles } from "../data/seedArticles";
+import { TestInMemoryArticleRepository, TestInMemoryRawArticleRepository } from "@helpers";
+import { seedArticles } from "@data";
 
 describe("loadSeedData", () => {
   it("loads seed articles into both repos when empty", async () => {

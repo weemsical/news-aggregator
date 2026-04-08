@@ -1,7 +1,6 @@
-import { TestInMemoryArticleRepository } from "./helpers/TestInMemoryArticleRepository";
-import { TestInMemoryHighlightRepository } from "./helpers/TestInMemoryHighlightRepository";
+import { TestInMemoryArticleRepository, TestInMemoryHighlightRepository } from "@helpers";
 import { anonymize } from "@services";
-import { seedArticles } from "../data/seedArticles";
+import { seedArticles } from "@data";
 
 describe("Seed Articles", () => {
   it("should contain a meaningful number of articles from diverse sources", () => {

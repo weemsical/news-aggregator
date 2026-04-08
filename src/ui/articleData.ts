@@ -1,5 +1,5 @@
 import { anonymize } from "@services";
-import { seedArticles } from "../data/seedArticles";
+import { seedArticles } from "@data";
 import { AnonymizedArticle } from "@types";
 import { fetchArticles } from "./apiClient";
 

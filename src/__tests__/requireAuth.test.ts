@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { requireAuth, optionalAuth } from "../server/middleware/requireAuth";
+import { requireAuth, optionalAuth } from "@middleware";
 import { signToken } from "../server/auth";
 
 function mockReqRes(cookies: Record<string, string> = {}) {

@@ -1,6 +1,6 @@
 import { Router, Request } from "express";
 import { HighlightRepository, VoteRepository, CommentRepository } from "@repositories";
-import { requireAuth, optionalAuth } from "../middleware/requireAuth";
+import { requireAuth, optionalAuth } from "@middleware";
 import crypto from "crypto";
 
 const MAX_COMMENT_LENGTH = 250;

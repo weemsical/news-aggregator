@@ -1,5 +1,5 @@
 import { parseRssFeed } from "@services";
-import { FeedSource } from "../data/feedSources";
+import { FeedSource } from "@data";
 
 const source: FeedSource = {
   sourceId: "test-source",

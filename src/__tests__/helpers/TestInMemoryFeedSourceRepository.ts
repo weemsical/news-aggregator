@@ -1,4 +1,4 @@
-import { FeedSource } from "../../data/feedSources";
+import { FeedSource } from "@data";
 import { FeedSourceRepository } from "@repositories";
 
 export class TestInMemoryFeedSourceRepository implements FeedSourceRepository {

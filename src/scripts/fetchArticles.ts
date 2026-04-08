@@ -1,5 +1,4 @@
-import { feedSources } from "../data/feedSources";
-import { getAllFeedSources } from "../data/getAllFeedSources";
+import { feedSources, getAllFeedSources } from "@data";
 import { fetchFeed, parseRssFeed } from "@services";
 import { ArticleRepository, FeedSourceRepository } from "@repositories";
 import { Article } from "@types";

@@ -1,6 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import { Article } from "@types";
-import { FeedSource } from "../data/feedSources";
+import { FeedSource } from "@data";
 
 const parser = new XMLParser({
   ignoreAttributes: false,

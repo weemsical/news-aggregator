@@ -1,5 +1,5 @@
 import request from "supertest";
-import { buildTestApp } from "./helpers/buildTestApp";
+import { buildTestApp } from "@helpers";
 
 describe("GET /api/leaderboard", () => {
   it("returns empty array (stubbed for Phase 4)", async () => {

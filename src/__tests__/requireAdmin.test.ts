@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { createRequireAdmin } from "../server/middleware/requireAdmin";
-import { TestInMemoryUserRepository } from "./helpers/TestInMemoryUserRepository";
+import { createRequireAdmin } from "@middleware";
+import { TestInMemoryUserRepository } from "@helpers";
 
 function mockReqRes(user?: { userId: string }) {
   const req = { user } as unknown as Request;

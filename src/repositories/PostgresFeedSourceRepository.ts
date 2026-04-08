@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { FeedSource } from "../data/feedSources";
+import { FeedSource } from "@data";
 import { FeedSourceRepository } from "./FeedSourceRepository";
 
 export class PostgresFeedSourceRepository implements FeedSourceRepository {

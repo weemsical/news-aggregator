@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { FeedSourceRepository, ArticleRepository, UserRepository } from "@repositories";
-import { requireAuth } from "../middleware/requireAuth";
-import { createRequireAdmin } from "../middleware/requireAdmin";
-import { getAllFeedSources } from "../../data/getAllFeedSources";
+import { requireAuth, createRequireAdmin } from "@middleware";
+import { getAllFeedSources } from "@data";
 import { fetchFeed, parseRssFeed } from "@services";
 
 export function adminRouter(

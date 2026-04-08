@@ -13,6 +13,9 @@ export default defineConfig({
       "@types": path.resolve(__dirname, "src/types"),
       "@repositories": path.resolve(__dirname, "src/repositories"),
       "@services": path.resolve(__dirname, "src/services"),
+      "@data": path.resolve(__dirname, "src/data"),
+      "@middleware": path.resolve(__dirname, "src/server/middleware"),
+      "@routes": path.resolve(__dirname, "src/server/routes"),
     },
   },
   server: {

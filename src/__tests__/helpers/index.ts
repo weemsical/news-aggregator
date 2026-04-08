@@ -1,0 +1,9 @@
+export { buildTestApp } from "./buildTestApp";
+export { TestInMemoryArticleRepository } from "./TestInMemoryArticleRepository";
+export { TestInMemoryHighlightRepository } from "./TestInMemoryHighlightRepository";
+export { TestInMemoryUserRepository } from "./TestInMemoryUserRepository";
+export { TestInMemoryFeedSourceRepository } from "./TestInMemoryFeedSourceRepository";
+export { TestInMemoryRawArticleRepository } from "./TestInMemoryRawArticleRepository";
+export { TestInMemoryVoteRepository } from "./TestInMemoryVoteRepository";
+export { TestInMemoryCommentRepository } from "./TestInMemoryCommentRepository";
+export { TestInMemoryHighlightClusterRepository } from "./TestInMemoryHighlightClusterRepository";

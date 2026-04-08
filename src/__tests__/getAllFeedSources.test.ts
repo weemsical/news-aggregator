@@ -1,6 +1,5 @@
-import { getAllFeedSources } from "../data/getAllFeedSources";
-import { feedSources } from "../data/feedSources";
-import { TestInMemoryFeedSourceRepository } from "./helpers/TestInMemoryFeedSourceRepository";
+import { getAllFeedSources, feedSources } from "@data";
+import { TestInMemoryFeedSourceRepository } from "@helpers";
 
 describe("getAllFeedSources", () => {
   it("returns static sources when DB is empty", async () => {

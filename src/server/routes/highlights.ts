@@ -1,7 +1,6 @@
 import { Router, Request } from "express";
 import { ArticleRepository, HighlightRepository, HighlightClusterRepository, VoteRepository } from "@repositories";
-import { requireAuth, optionalAuth } from "../middleware/requireAuth";
-import { anonRateLimit } from "../middleware/anonRateLimit";
+import { requireAuth, optionalAuth, anonRateLimit } from "@middleware";
 import { RequestHandler } from "express";
 import { findOverlaps, ClusterService } from "@services";
 import crypto from "crypto";

@@ -1,4 +1,4 @@
-import { FeedSource } from "../data/feedSources";
+import { FeedSource } from "@data";
 
 export interface FeedSourceRepository {
   save(source: FeedSource): Promise<void>;

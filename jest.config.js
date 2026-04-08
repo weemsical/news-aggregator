@@ -4,6 +4,10 @@ const pathAliases = {
   "^@types$": "<rootDir>/src/types/index.ts",
   "^@repositories$": "<rootDir>/src/repositories/index.ts",
   "^@services$": "<rootDir>/src/services/index.ts",
+  "^@data$": "<rootDir>/src/data/index.ts",
+  "^@middleware$": "<rootDir>/src/server/middleware/index.ts",
+  "^@routes$": "<rootDir>/src/server/routes/index.ts",
+  "^@helpers$": "<rootDir>/src/__tests__/helpers/index.ts",
 };
 
 module.exports = {

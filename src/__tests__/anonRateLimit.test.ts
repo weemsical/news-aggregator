@@ -1,6 +1,6 @@
 import request from "supertest";
-import { buildTestApp } from "./helpers/buildTestApp";
-import { createAnonRateLimit } from "../server/middleware/anonRateLimit";
+import { buildTestApp } from "@helpers";
+import { createAnonRateLimit } from "@middleware";
 import { Article } from "@types";
 
 const testArticle: Article = {

@@ -1,6 +1,6 @@
 import { Router, Request } from "express";
 import { HighlightRepository, VoteRepository } from "@repositories";
-import { requireAuth, optionalAuth } from "../middleware/requireAuth";
+import { requireAuth, optionalAuth } from "@middleware";
 import crypto from "crypto";
 
 export function votesRouter(

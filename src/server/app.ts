@@ -1,13 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import { ArticleRepository, HighlightRepository, UserRepository, FeedSourceRepository, RawArticleRepository, VoteRepository, CommentRepository, HighlightClusterRepository } from "@repositories";
-import { articlesRouter } from "./routes/articles";
-import { highlightsRouter, highlightActionsRouter } from "./routes/highlights";
-import { authRouter } from "./routes/auth";
-import { leaderboardRouter } from "./routes/leaderboard";
-import { adminRouter } from "./routes/admin";
-import { votesRouter } from "./routes/votes";
-import { commentsRouter } from "./routes/comments";
+import { articlesRouter, highlightsRouter, highlightActionsRouter, authRouter, leaderboardRouter, adminRouter, votesRouter, commentsRouter } from "@routes";
 import { ClusterService } from "@services";
 import { RequestHandler } from "express";
 

@@ -1,6 +1,6 @@
 import { runFetchArticles } from "../scripts/fetchArticles";
 import * as RssFetcher from "../services/RssFetcher";
-import { TestInMemoryArticleRepository } from "./helpers/TestInMemoryArticleRepository";
+import { TestInMemoryArticleRepository } from "@helpers";
 
 jest.mock("../services/RssFetcher");
 const mockFetchFeed = RssFetcher.fetchFeed as jest.MockedFunction<typeof RssFetcher.fetchFeed>;

@@ -1,4 +1,4 @@
-import { feedSources, FeedSource } from "../data/feedSources";
+import { feedSources, FeedSource } from "@data";
 
 describe("feedSources", () => {
   const expectedSourceIds = [

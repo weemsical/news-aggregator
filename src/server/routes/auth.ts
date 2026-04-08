@@ -8,7 +8,7 @@ import {
   isValidEmail,
   isValidPassword,
 } from "../auth";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAuth } from "@middleware";
 
 export function authRouter(users: UserRepository): Router {
   const router = Router();
