@@ -2,12 +2,14 @@ export interface TextSegment {
   text: string;
   highlighted: boolean;
   highlightId?: string;
+  userId?: string;
 }
 
 interface HighlightRef {
   startOffset: number;
   endOffset: number;
   id: string;
+  userId?: string;
 }
 
 export function splitByOffsets(
@@ -37,6 +39,7 @@ export function splitByOffsets(
       text: paragraphText.slice(start, end),
       highlighted: true,
       highlightId: highlight.id,
+      userId: highlight.userId,
     });
 
     cursor = end;

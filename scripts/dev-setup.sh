@@ -14,7 +14,7 @@ echo "=== I Call BullShit — Dev Setup ==="
 echo ""
 
 # --- Step 1: Database ---
-if command -v docker &>/dev/null; then
+if command -v docker &>/dev/null && docker info &>/dev/null; then
   if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo "✓ Postgres container '${CONTAINER_NAME}' is already running."
   elif docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -34,12 +34,17 @@ if command -v docker &>/dev/null; then
   fi
   export DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${DB_PORT}/${DB_NAME}"
 else
-  echo "Docker not found. Make sure Postgres is running and set DATABASE_URL."
-  echo "Example: export DATABASE_URL=postgres://localhost:5432/icbs"
+  if command -v docker &>/dev/null; then
+    echo "ERROR: Docker is installed but the daemon is not running."
+    echo "Please start Docker Desktop and try again."
+  else
+    echo "Docker not found. Make sure Postgres is running and set DATABASE_URL."
+    echo "Example: export DATABASE_URL=postgres://localhost:5432/icbs"
+  fi
   if [ -z "${DATABASE_URL:-}" ]; then
     echo ""
-    echo "ERROR: DATABASE_URL is not set and Docker is not available."
-    echo "Either install Docker or start Postgres manually and set DATABASE_URL."
+    echo "ERROR: DATABASE_URL is not set and Postgres is not available."
+    echo "Either start Docker Desktop or start Postgres manually and set DATABASE_URL."
     exit 1
   fi
 fi

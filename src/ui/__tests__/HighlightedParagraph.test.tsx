@@ -74,4 +74,50 @@ describe("HighlightedParagraph", () => {
     const p = container.querySelector("p");
     expect(p).toHaveAttribute("data-paragraph-index", "3");
   });
+
+  it("renders anonymous highlights with anon CSS class", () => {
+    const { container } = render(
+      <HighlightedParagraph
+        text="The witness accused the committee of bias."
+        paragraphIndex={0}
+        highlights={[{ id: "h1", startOffset: 12, endOffset: 33, userId: "anon" }]}
+      />
+    );
+
+    const marks = container.querySelectorAll("mark");
+    expect(marks).toHaveLength(1);
+    expect(marks[0]).toHaveClass("article-reader__highlight--anon");
+  });
+
+  it("renders registered highlights with registered CSS class", () => {
+    const { container } = render(
+      <HighlightedParagraph
+        text="The witness accused the committee of bias."
+        paragraphIndex={0}
+        highlights={[{ id: "h1", startOffset: 12, endOffset: 33, userId: "user-123" }]}
+      />
+    );
+
+    const marks = container.querySelectorAll("mark");
+    expect(marks).toHaveLength(1);
+    expect(marks[0]).toHaveClass("article-reader__highlight--registered");
+  });
+
+  it("renders mixed highlights with correct classes", () => {
+    const { container } = render(
+      <HighlightedParagraph
+        text="The radical plan will destroy jobs and ruin the economy."
+        paragraphIndex={0}
+        highlights={[
+          { id: "h1", startOffset: 4, endOffset: 16, userId: "user-1" },
+          { id: "h2", startOffset: 39, endOffset: 55, userId: "anon" },
+        ]}
+      />
+    );
+
+    const marks = container.querySelectorAll("mark");
+    expect(marks).toHaveLength(2);
+    expect(marks[0]).toHaveClass("article-reader__highlight--registered");
+    expect(marks[1]).toHaveClass("article-reader__highlight--anon");
+  });
 });

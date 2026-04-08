@@ -123,18 +123,63 @@ describe("POST /api/articles/:id/highlights", () => {
     expect(await highlights.count()).toBe(1);
   });
 
-  it("returns 401 when not authenticated", async () => {
+  it("creates an anonymous highlight when not authenticated", async () => {
+    const { app, articles, highlights } = buildApp();
+    await articles.save(testArticle);
+
+    const res = await request(app)
+      .post("/api/articles/article-1/highlights")
+      .send({
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 4,
+        highlightedText: "Test",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.userId).toBe("anon");
+    expect(res.body.explanation).toBe("");
+    expect(res.body.highlightedText).toBe("Test");
+    expect(res.body.articleId).toBe("article-1");
+    expect(await highlights.count()).toBe(1);
+  });
+
+  it("allows anonymous highlight with empty explanation", async () => {
     const { app, articles } = buildApp();
     await articles.save(testArticle);
 
     const res = await request(app)
       .post("/api/articles/article-1/highlights")
       .send({
-        paragraphIndex: 0, startOffset: 0, endOffset: 4,
-        highlightedText: "Test", explanation: "reason",
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 4,
+        highlightedText: "Test",
+        explanation: "",
       });
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(201);
+    expect(res.body.userId).toBe("anon");
+    expect(res.body.explanation).toBe("");
+  });
+
+  it("still requires explanation for authenticated users", async () => {
+    const { app, articles } = buildApp();
+    await articles.save(testArticle);
+    const { cookie } = await signupAndGetCookie(app);
+
+    const res = await request(app)
+      .post("/api/articles/article-1/highlights")
+      .set("Cookie", cookie)
+      .send({
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 4,
+        highlightedText: "Test",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/explanation/i);
   });
 
   it("returns 404 when article does not exist", async () => {
@@ -274,6 +319,29 @@ describe("PUT /api/highlights/:id", () => {
     expect(res.status).toBe(403);
   });
 
+  it("returns 403 when attempting to edit an anonymous highlight", async () => {
+    const { app, articles, highlights } = buildApp();
+    await articles.save(testArticle);
+
+    await highlights.save({
+      id: "h-anon", articleId: "article-1", userId: "anon",
+      paragraphIndex: 0, startOffset: 0, endOffset: 4,
+      highlightedText: "Test", explanation: "",
+      isEdited: false, originalExplanation: null,
+      createdAt: Date.now(), updatedAt: Date.now(),
+    });
+
+    const { cookie } = await signupAndGetCookie(app);
+
+    const res = await request(app)
+      .put("/api/highlights/h-anon")
+      .set("Cookie", cookie)
+      .send({ explanation: "Updated" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/anonymous/i);
+  });
+
   it("returns 404 when highlight not found", async () => {
     const { app } = buildApp();
     const { cookie } = await signupAndGetCookie(app);
@@ -335,6 +403,28 @@ describe("DELETE /api/highlights/:id", () => {
       .set("Cookie", cookie);
 
     expect(res.status).toBe(403);
+  });
+
+  it("returns 403 when attempting to delete an anonymous highlight", async () => {
+    const { app, articles, highlights } = buildApp();
+    await articles.save(testArticle);
+
+    await highlights.save({
+      id: "h-anon", articleId: "article-1", userId: "anon",
+      paragraphIndex: 0, startOffset: 0, endOffset: 4,
+      highlightedText: "Test", explanation: "",
+      isEdited: false, originalExplanation: null,
+      createdAt: Date.now(), updatedAt: Date.now(),
+    });
+
+    const { cookie } = await signupAndGetCookie(app);
+
+    const res = await request(app)
+      .delete("/api/highlights/h-anon")
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/anonymous/i);
   });
 
   it("returns 404 when highlight not found", async () => {

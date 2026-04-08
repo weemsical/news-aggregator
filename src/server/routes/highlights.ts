@@ -2,6 +2,7 @@ import { Router, Request } from "express";
 import { ArticleRepository } from "../../repositories/ArticleRepository";
 import { HighlightRepository } from "../../repositories/HighlightRepository";
 import { requireAuth, optionalAuth } from "../middleware/requireAuth";
+import { anonRateLimit } from "../middleware/anonRateLimit";
 
 let highlightIdCounter = 0;
 
@@ -24,7 +25,7 @@ export function highlightsRouter(
     }
   });
 
-  router.post("/", requireAuth, async (req: Request<{ id: string }>, res) => {
+  router.post("/", optionalAuth, anonRateLimit, async (req: Request<{ id: string }>, res) => {
     const articleId = req.params.id;
     const exists = await articleRepo.exists(articleId);
     if (!exists) {
@@ -33,6 +34,7 @@ export function highlightsRouter(
     }
 
     const { paragraphIndex, startOffset, endOffset, highlightedText, explanation } = req.body;
+    const isAnonymous = !req.user;
 
     if (paragraphIndex == null || typeof paragraphIndex !== "number" || paragraphIndex < 0) {
       res.status(400).json({ error: "paragraphIndex is required and must be a non-negative number" });
@@ -50,7 +52,7 @@ export function highlightsRouter(
       res.status(400).json({ error: "highlightedText is required" });
       return;
     }
-    if (!explanation || !String(explanation).trim()) {
+    if (!isAnonymous && (!explanation || !String(explanation).trim())) {
       res.status(400).json({ error: "explanation is required" });
       return;
     }
@@ -60,12 +62,12 @@ export function highlightsRouter(
     const highlight = {
       id: `highlight-${now}-${highlightIdCounter}`,
       articleId,
-      userId: req.user!.userId,
+      userId: isAnonymous ? "anon" : req.user!.userId,
       paragraphIndex,
       startOffset,
       endOffset,
       highlightedText: String(highlightedText),
-      explanation: String(explanation),
+      explanation: isAnonymous ? "" : String(explanation),
       isEdited: false,
       originalExplanation: null,
       createdAt: now,
@@ -90,6 +92,10 @@ export function highlightActionsRouter(
       res.status(404).json({ error: "Highlight not found" });
       return;
     }
+    if (highlight.userId === "anon") {
+      res.status(403).json({ error: "Anonymous highlights cannot be edited" });
+      return;
+    }
     if (highlight.userId !== req.user!.userId) {
       res.status(403).json({ error: "Not authorized to edit this highlight" });
       return;
@@ -111,6 +117,10 @@ export function highlightActionsRouter(
     const highlight = await highlightRepo.findById(req.params.id);
     if (!highlight) {
       res.status(404).json({ error: "Highlight not found" });
+      return;
+    }
+    if (highlight.userId === "anon") {
+      res.status(403).json({ error: "Anonymous highlights cannot be deleted" });
       return;
     }
     if (highlight.userId !== req.user!.userId) {

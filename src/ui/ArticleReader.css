@@ -58,9 +58,17 @@
 }
 
 .article-reader__highlight {
-  background-color: #fff3cd;
-  border-bottom: 2px solid #e6a817;
   padding: 0 2px;
   border-radius: 2px;
   cursor: pointer;
+}
+
+.article-reader__highlight--registered {
+  background-color: #cce5ff;
+  border-bottom: 2px solid #4a90d9;
+}
+
+.article-reader__highlight--anon {
+  background-color: #fff3cd;
+  border-bottom: 2px solid #e6a817;
 }

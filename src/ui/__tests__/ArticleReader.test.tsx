@@ -181,11 +181,12 @@ describe("ArticleReader", () => {
 });
 
 describe("ArticleReader — auth & toggle", () => {
-  it("does not show highlight toggle when logged out", async () => {
+  it("shows simple toggle when logged out", async () => {
     mockUseAuth.mockReturnValue({ ...mockAuth, user: null });
     render(<ArticleReader article={article} onBack={() => {}} />);
     await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
     expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Show highlights")).toBeInTheDocument();
   });
 
   it("shows highlight toggle when logged in", async () => {
@@ -304,7 +305,7 @@ describe("ArticleReader — auth & toggle", () => {
     });
   });
 
-  it("does not show popover on mouseup when logged out", async () => {
+  it("shows anonymous popover when logged out", async () => {
     mockUseAuth.mockReturnValue({ ...mockAuth, user: null });
     const mockRect = { top: 50, left: 100, bottom: 70, right: 200 } as DOMRect;
     (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
@@ -323,5 +324,49 @@ describe("ArticleReader — auth & toggle", () => {
 
     fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /mark as propaganda/i })).toBeInTheDocument();
+    expect(screen.getByText(/create an account/i)).toBeInTheDocument();
+  });
+
+  it("auto-enables highlights after anonymous user creates one", async () => {
+    mockUseAuth.mockReturnValue({ ...mockAuth, user: null });
+    const mockRect = { top: 50, left: 100, bottom: 70, right: 200 } as DOMRect;
+    (selectionModule.getSelectionInfo as jest.Mock).mockReturnValueOnce({
+      text: "First",
+      rect: mockRect,
+      paragraphIndex: 0,
+      startOffset: 0,
+      endOffset: 5,
+    });
+
+    mockCreateHighlight.mockResolvedValueOnce({
+      id: "h-new",
+      articleId: "reader-1",
+      userId: "anon",
+      paragraphIndex: 0,
+      startOffset: 0,
+      endOffset: 5,
+      highlightedText: "First",
+      explanation: "",
+      isEdited: false,
+      originalExplanation: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    const { container } = render(
+      <ArticleReader article={article} onBack={() => {}} />
+    );
+
+    await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
+
+    fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
+    await userEvent.click(screen.getByRole("button", { name: /mark as propaganda/i }));
+
+    await waitFor(() => {
+      const marks = container.querySelectorAll("mark");
+      expect(marks).toHaveLength(1);
+      expect(marks[0].textContent).toBe("First");
+    });
   });
 });

@@ -5,6 +5,7 @@ export type HighlightView = "mine" | "all" | "none";
 interface HighlightToggleProps {
   value: HighlightView;
   onChange: (value: HighlightView) => void;
+  isAnonymous?: boolean;
 }
 
 const options: { value: HighlightView; label: string }[] = [
@@ -13,7 +14,23 @@ const options: { value: HighlightView; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
-export function HighlightToggle({ value, onChange }: HighlightToggleProps) {
+export function HighlightToggle({ value, onChange, isAnonymous = false }: HighlightToggleProps) {
+  if (isAnonymous) {
+    const isOn = value === "all";
+    return (
+      <div className="highlight-toggle">
+        <label className="highlight-toggle__label">
+          <input
+            type="checkbox"
+            checked={isOn}
+            onChange={() => onChange(isOn ? "none" : "all")}
+          />
+          Show highlights
+        </label>
+      </div>
+    );
+  }
+
   return (
     <div className="highlight-toggle" role="radiogroup" aria-label="Highlight view">
       {options.map((opt) => (

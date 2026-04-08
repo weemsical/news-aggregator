@@ -29,7 +29,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
   const { user } = useAuth();
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [highlightView, setHighlightView] = useState<HighlightView>("all");
+  const [highlightView, setHighlightView] = useState<HighlightView>(user ? "all" : "none");
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,8 +39,8 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
   }, [article.id]);
 
   const visibleHighlights = useMemo(() => {
-    if (!user) return [];
     if (highlightView === "none") return [];
+    if (!user) return highlights;
     if (highlightView === "mine") return highlights.filter((h) => h.userId === user.id);
     return highlights;
   }, [highlights, highlightView, user]);
@@ -48,10 +48,9 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
   const highlightsForParagraph = (paragraphIndex: number) =>
     visibleHighlights
       .filter((h) => h.paragraphIndex === paragraphIndex)
-      .map((h) => ({ id: h.id, startOffset: h.startOffset, endOffset: h.endOffset }));
+      .map((h) => ({ id: h.id, startOffset: h.startOffset, endOffset: h.endOffset, userId: h.userId }));
 
   const handleMouseUp = () => {
-    if (!user) return;
     const info = getSelectionInfo(bodyRef.current);
     if (!info || !bodyRef.current) {
       return;
@@ -87,6 +86,9 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
           explanation,
         });
         setHighlights((prev) => [...prev, newHighlight]);
+        if (!user && highlightView === "none") {
+          setHighlightView("all");
+        }
       }
     } catch {
       // Highlight operation failed — silently ignore
@@ -130,9 +132,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
           </span>
         ))}
       </div>
-      {user && (
-        <HighlightToggle value={highlightView} onChange={setHighlightView} />
-      )}
+      <HighlightToggle value={highlightView} onChange={setHighlightView} isAnonymous={!user} />
       <div
         className="article-reader__body"
         ref={bodyRef}
@@ -151,6 +151,7 @@ export function ArticleReader({ article, onBack }: ArticleReaderProps) {
             selectedText={popover.text}
             position={{ top: popover.top, left: popover.left }}
             mode={popover.mode}
+            isAnonymous={!user}
             initialExplanation={popover.initialExplanation}
             highlightId={popover.highlightId}
             onSubmit={handleSubmit}

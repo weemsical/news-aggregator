@@ -4,6 +4,7 @@ interface HighlightRef {
   id: string;
   startOffset: number;
   endOffset: number;
+  userId?: string;
 }
 
 interface HighlightedParagraphProps {
@@ -17,15 +18,19 @@ export function HighlightedParagraph({ text, paragraphIndex, highlights }: Highl
 
   return (
     <p data-paragraph-index={paragraphIndex}>
-      {segments.map((seg, i) =>
-        seg.highlighted ? (
-          <mark key={i} className="article-reader__highlight">
+      {segments.map((seg, i) => {
+        if (!seg.highlighted) {
+          return <span key={i}>{seg.text}</span>;
+        }
+        const colorClass = seg.userId === "anon"
+          ? "article-reader__highlight--anon"
+          : "article-reader__highlight--registered";
+        return (
+          <mark key={i} className={`article-reader__highlight ${colorClass}`}>
             {seg.text}
           </mark>
-        ) : (
-          <span key={i}>{seg.text}</span>
-        )
-      )}
+        );
+      })}
     </p>
   );
 }

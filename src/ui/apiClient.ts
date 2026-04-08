@@ -40,7 +40,7 @@ export async function createHighlight(
     startOffset: number;
     endOffset: number;
     highlightedText: string;
-    explanation: string;
+    explanation?: string;
   }
 ): Promise<Highlight> {
   const response = await fetch(`/api/articles/${articleId}/highlights`, {

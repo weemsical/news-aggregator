@@ -113,3 +113,40 @@ describe("HighlightPopover", () => {
     expect(screen.queryByRole("button", { name: /submit/i })).not.toBeInTheDocument();
   });
 });
+
+describe("HighlightPopover — anonymous mode", () => {
+  const anonProps = {
+    selectedText: "accused the committee of leveraging testimony",
+    position: { top: 100, left: 200 },
+    mode: "create" as const,
+    isAnonymous: true,
+    onSubmit: jest.fn(),
+    onCancel: jest.fn(),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("does not render a textarea in anonymous mode", () => {
+    render(<HighlightPopover {...anonProps} />);
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("shows Mark as Propaganda button in anonymous mode", () => {
+    render(<HighlightPopover {...anonProps} />);
+    expect(screen.getByRole("button", { name: /mark as propaganda/i })).toBeInTheDocument();
+  });
+
+  it("shows sign-up prompt in anonymous mode", () => {
+    render(<HighlightPopover {...anonProps} />);
+    expect(screen.getByText(/create an account/i)).toBeInTheDocument();
+  });
+
+  it("calls onSubmit with empty string when Mark as Propaganda is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default;
+    render(<HighlightPopover {...anonProps} />);
+    await user.click(screen.getByRole("button", { name: /mark as propaganda/i }));
+    expect(anonProps.onSubmit).toHaveBeenCalledWith("");
+  });
+});

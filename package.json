@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "dev": "concurrently \"npm run dev:server\" \"vite\"",
-    "dev:server": "npx tsx src/server/index.ts",
+    "dev:server": "DATABASE_URL=postgres://postgres:postgres@localhost:5432/icbs JWT_SECRET=dev-secret ADMIN_EMAILS=admin@example.com npx tsx src/server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "fetch-articles": "npx tsx src/scripts/fetchArticles.ts",
@@ -44,6 +44,7 @@
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
     "fast-xml-parser": "^5.4.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.19.0",

@@ -98,4 +98,23 @@ describe("splitByOffsets", () => {
     expect(result[1].text).toBe("radical plan");
     expect(result[3].text).toBe("destroy");
   });
+
+  it("propagates userId to highlighted segments", () => {
+    const result = splitByOffsets(
+      "The witness accused the committee.",
+      [{ startOffset: 12, endOffset: 33, id: "h-1", userId: "user-1" }]
+    );
+
+    expect(result[1].userId).toBe("user-1");
+    expect(result[0].userId).toBeUndefined();
+  });
+
+  it("propagates anon userId to highlighted segments", () => {
+    const result = splitByOffsets(
+      "The witness accused the committee.",
+      [{ startOffset: 12, endOffset: 33, id: "h-1", userId: "anon" }]
+    );
+
+    expect(result[1].userId).toBe("anon");
+  });
 });

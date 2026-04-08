@@ -8,7 +8,7 @@ export class TestInMemoryHighlightRepository implements HighlightRepository {
     if (!highlight.highlightedText.trim()) {
       throw new Error("highlightedText must not be empty");
     }
-    if (!highlight.explanation.trim()) {
+    if (highlight.userId !== "anon" && !highlight.explanation.trim()) {
       throw new Error("explanation must not be empty");
     }
     if (highlight.paragraphIndex < 0) {
