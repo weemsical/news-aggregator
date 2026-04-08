@@ -1,4 +1,11 @@
 /** @type {import('jest').Config} */
+
+const pathAliases = {
+  "^@types$": "<rootDir>/src/types/index.ts",
+  "^@repositories$": "<rootDir>/src/repositories/index.ts",
+  "^@services$": "<rootDir>/src/services/index.ts",
+};
+
 module.exports = {
   projects: [
     {
@@ -7,6 +14,7 @@ module.exports = {
       testEnvironment: "node",
       roots: ["<rootDir>/src"],
       testMatch: ["<rootDir>/src/__tests__/**/*.test.ts"],
+      moduleNameMapper: pathAliases,
     },
     {
       displayName: "components",
@@ -21,6 +29,7 @@ module.exports = {
       },
       moduleNameMapper: {
         "\\.css$": "<rootDir>/src/ui/__tests__/styleMock.js",
+        ...pathAliases,
       },
       setupFilesAfterEnv: ["<rootDir>/src/ui/__tests__/setup.ts"],
     },

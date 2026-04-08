@@ -1,5 +1,5 @@
-import { Article } from "../types";
-import { ArticleRepository } from "../repositories/ArticleRepository";
+import { Article } from "@types";
+import { ArticleRepository } from "@repositories";
 
 export function articleRepositoryContractTests(
   createRepo: () => Promise<ArticleRepository>,

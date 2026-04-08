@@ -1,4 +1,4 @@
-import { Article } from "../types";
+import { Article } from "@types";
 
 describe("Article", () => {
   it("should capture the full structure of a scraped news article", () => {

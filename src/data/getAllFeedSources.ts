@@ -1,5 +1,5 @@
 import { FeedSource, feedSources } from "./feedSources";
-import { FeedSourceRepository } from "../repositories/FeedSourceRepository";
+import { FeedSourceRepository } from "@repositories";
 
 export async function getAllFeedSources(
   repo: FeedSourceRepository

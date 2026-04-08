@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { UserRepository } from "../../repositories/UserRepository";
+import { UserRepository } from "@repositories";
 
 export function createRequireAdmin(users: UserRepository) {
   return async function requireAdmin(

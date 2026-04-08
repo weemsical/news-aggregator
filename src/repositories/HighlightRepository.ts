@@ -1,4 +1,4 @@
-import { Highlight } from "../types";
+import { Highlight } from "@types";
 
 export interface HighlightRepository {
   save(highlight: Highlight): Promise<void>;

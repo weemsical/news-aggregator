@@ -1,4 +1,4 @@
-import { fetchFeed } from "../services/RssFetcher";
+import { fetchFeed } from "@services";
 
 const originalFetch = global.fetch;
 

@@ -1,5 +1,5 @@
-import { RawArticle } from "../../types";
-import { RawArticleRepository } from "../../repositories/RawArticleRepository";
+import { RawArticle } from "@types";
+import { RawArticleRepository } from "@repositories";
 
 export class TestInMemoryRawArticleRepository implements RawArticleRepository {
   private rawArticles: Map<string, RawArticle> = new Map();

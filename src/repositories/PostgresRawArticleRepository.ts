@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { RawArticle } from "../types";
+import { RawArticle } from "@types";
 import { RawArticleRepository } from "./RawArticleRepository";
 
 export class PostgresRawArticleRepository implements RawArticleRepository {

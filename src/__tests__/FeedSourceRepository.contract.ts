@@ -1,5 +1,5 @@
 import { FeedSource } from "../data/feedSources";
-import { FeedSourceRepository } from "../repositories/FeedSourceRepository";
+import { FeedSourceRepository } from "@repositories";
 
 export function feedSourceRepositoryContractTests(
   createRepo: () => Promise<FeedSourceRepository>,

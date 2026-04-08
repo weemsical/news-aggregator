@@ -1,4 +1,4 @@
-import { Article } from "../types";
+import { Article } from "@types";
 
 /**
  * Seed articles drawn from real-world news topics across a range of sources

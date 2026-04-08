@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { feedSourceRepositoryContractTests } from "./FeedSourceRepository.contract";
-import { PostgresFeedSourceRepository } from "../repositories/PostgresFeedSourceRepository";
+import { PostgresFeedSourceRepository } from "@repositories";
 import { runMigrations } from "../db/migrate";
 
 const describeWithDb = process.env.DATABASE_URL ? describe : describe.skip;

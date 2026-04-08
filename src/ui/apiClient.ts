@@ -1,4 +1,4 @@
-import { AnonymizedArticle, Highlight, LeaderboardEntry } from "../types";
+import { AnonymizedArticle, Highlight, LeaderboardEntry } from "@types";
 
 export interface AuthUser {
   id: string;

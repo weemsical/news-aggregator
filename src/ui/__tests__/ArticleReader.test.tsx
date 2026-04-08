@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ArticleReader } from "../ArticleReader";
-import { AnonymizedArticle } from "../../types";
+import { AnonymizedArticle } from "@types";
 import * as apiClient from "../apiClient";
 import * as selectionModule from "../getSelectionInfo";
 import * as authContext from "../AuthContext";

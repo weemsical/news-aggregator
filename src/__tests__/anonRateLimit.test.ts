@@ -1,7 +1,7 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/buildTestApp";
 import { createAnonRateLimit } from "../server/middleware/anonRateLimit";
-import { Article } from "../types";
+import { Article } from "@types";
 
 const testArticle: Article = {
   id: "article-1",

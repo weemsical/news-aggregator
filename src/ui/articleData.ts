@@ -1,6 +1,6 @@
-import { anonymize } from "../services/anonymize";
+import { anonymize } from "@services";
 import { seedArticles } from "../data/seedArticles";
-import { AnonymizedArticle } from "../types";
+import { AnonymizedArticle } from "@types";
 import { fetchArticles } from "./apiClient";
 
 export async function loadArticles(): Promise<AnonymizedArticle[]> {

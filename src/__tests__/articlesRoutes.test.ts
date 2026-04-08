@@ -1,6 +1,6 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/buildTestApp";
-import { Article } from "../types";
+import { Article } from "@types";
 
 const foxArticle: Article = {
   id: "article-1",

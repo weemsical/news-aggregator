@@ -8,7 +8,12 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "declaration": true
+    "declaration": true,
+    "paths": {
+      "@types": ["./src/types/index.ts"],
+      "@repositories": ["./src/repositories/index.ts"],
+      "@services": ["./src/services/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

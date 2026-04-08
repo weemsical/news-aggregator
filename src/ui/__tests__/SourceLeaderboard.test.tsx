@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { SourceLeaderboard } from "../SourceLeaderboard";
-import { LeaderboardEntry } from "../../types";
+import { LeaderboardEntry } from "@types";
 
 const entries: LeaderboardEntry[] = [
   { sourceId: "fox-news", sourceName: "Fox News", flagCount: 10 },

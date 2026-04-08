@@ -1,6 +1,6 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { UserRepository } from "../../repositories/UserRepository";
+import { UserRepository } from "@repositories";
 import {
   hashPassword,
   verifyPassword,

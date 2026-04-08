@@ -1,5 +1,5 @@
-import { User } from "../../types";
-import { UserRepository } from "../../repositories/UserRepository";
+import { User } from "@types";
+import { UserRepository } from "@repositories";
 
 export class TestInMemoryUserRepository implements UserRepository {
   private users: Map<string, User> = new Map();

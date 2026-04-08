@@ -1,5 +1,5 @@
-import { Article, AnonymizedArticle } from "../types";
-import { anonymize } from "../services/anonymize";
+import { Article, AnonymizedArticle } from "@types";
+import { anonymize } from "@services";
 
 describe("anonymize", () => {
   /**

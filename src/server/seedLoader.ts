@@ -1,5 +1,4 @@
-import { ArticleRepository } from "../repositories/ArticleRepository";
-import { RawArticleRepository } from "../repositories/RawArticleRepository";
+import { ArticleRepository, RawArticleRepository } from "@repositories";
 import { seedArticles } from "../data/seedArticles";
 
 export async function loadSeedData(repos: {

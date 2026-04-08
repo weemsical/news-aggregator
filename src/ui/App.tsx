@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { AnonymizedArticle, LeaderboardEntry } from "../types";
+import { AnonymizedArticle, LeaderboardEntry } from "@types";
 import { loadArticles } from "./articleData";
 import { fetchLeaderboard } from "./apiClient";
 import { ArticleList } from "./ArticleList";

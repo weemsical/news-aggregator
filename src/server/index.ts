@@ -1,5 +1,5 @@
 import { createApp } from "./app";
-import { createRepositories } from "../repositories/createRepositories";
+import { createRepositories } from "@repositories";
 import { loadSeedData } from "./seedLoader";
 import { getPool } from "../db/pool";
 import { runMigrations } from "../db/migrate";

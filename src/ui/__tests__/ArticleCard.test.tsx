@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ArticleCard } from "../ArticleCard";
-import { AnonymizedArticle } from "../../types";
+import { AnonymizedArticle } from "@types";
 
 const sampleArticle: AnonymizedArticle = {
   id: "test-1",

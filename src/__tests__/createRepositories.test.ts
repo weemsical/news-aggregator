@@ -1,4 +1,4 @@
-import { createRepositories } from "../repositories/createRepositories";
+import { createRepositories } from "@repositories";
 
 describe("createRepositories", () => {
   const originalEnv = process.env.DATABASE_URL;

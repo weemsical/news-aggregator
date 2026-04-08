@@ -1,4 +1,4 @@
-import { parseRssFeed } from "../services/RssParser";
+import { parseRssFeed } from "@services";
 import { FeedSource } from "../data/feedSources";
 
 const source: FeedSource = {

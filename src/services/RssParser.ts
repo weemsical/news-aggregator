@@ -1,5 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
-import { Article } from "../types";
+import { Article } from "@types";
 import { FeedSource } from "../data/feedSources";
 
 const parser = new XMLParser({

@@ -1,15 +1,14 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import { ArticleRepository } from "../repositories/ArticleRepository";
-import { HighlightRepository } from "../repositories/HighlightRepository";
-import { UserRepository } from "../repositories/UserRepository";
-import { FeedSourceRepository } from "../repositories/FeedSourceRepository";
-import { RawArticleRepository } from "../repositories/RawArticleRepository";
+import { ArticleRepository, HighlightRepository, UserRepository, FeedSourceRepository, RawArticleRepository, VoteRepository, CommentRepository, HighlightClusterRepository } from "@repositories";
 import { articlesRouter } from "./routes/articles";
 import { highlightsRouter, highlightActionsRouter } from "./routes/highlights";
 import { authRouter } from "./routes/auth";
 import { leaderboardRouter } from "./routes/leaderboard";
 import { adminRouter } from "./routes/admin";
+import { votesRouter } from "./routes/votes";
+import { commentsRouter } from "./routes/comments";
+import { ClusterService } from "@services";
 import { RequestHandler } from "express";
 
 interface AppDeps {
@@ -18,18 +17,25 @@ interface AppDeps {
   users: UserRepository;
   feedSources: FeedSourceRepository;
   rawArticles: RawArticleRepository;
+  votes: VoteRepository;
+  comments: CommentRepository;
+  highlightClusters: HighlightClusterRepository;
   rateLimitMiddleware?: RequestHandler;
 }
 
-export function createApp({ articles, highlights, users, feedSources, rawArticles, rateLimitMiddleware }: AppDeps) {
+export function createApp({ articles, highlights, users, feedSources, rawArticles, votes, comments, highlightClusters, rateLimitMiddleware }: AppDeps) {
   const app = express();
+
+  const clusterService = new ClusterService(highlights, highlightClusters);
 
   app.use(express.json());
   app.use(cookieParser());
   app.use("/api/auth", authRouter(users));
   app.use("/api/articles", articlesRouter(articles));
-  app.use("/api/articles/:id/highlights", highlightsRouter(articles, highlights, rateLimitMiddleware));
-  app.use("/api/highlights", highlightActionsRouter(highlights));
+  app.use("/api/articles/:id/highlights", highlightsRouter(articles, highlights, rateLimitMiddleware, highlightClusters, votes));
+  app.use("/api/highlights", highlightActionsRouter(highlights, clusterService));
+  app.use("/api/highlights", votesRouter(highlights, votes));
+  app.use("/api/highlights", commentsRouter(highlights, votes, comments));
   app.use("/api/leaderboard", leaderboardRouter());
   app.use("/api/admin", adminRouter(feedSources, articles, users));
 

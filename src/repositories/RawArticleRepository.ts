@@ -1,4 +1,4 @@
-import { RawArticle } from "../types";
+import { RawArticle } from "@types";
 
 export interface RawArticleRepository {
   save(rawArticle: RawArticle): Promise<void>;

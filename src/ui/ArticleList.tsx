@@ -1,4 +1,4 @@
-import { AnonymizedArticle } from "../types";
+import { AnonymizedArticle } from "@types";
 import { ArticleCard } from "./ArticleCard";
 import "./ArticleList.css";
 

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ArticleList } from "../ArticleList";
-import { AnonymizedArticle } from "../../types";
+import { AnonymizedArticle } from "@types";
 
 const articles: AnonymizedArticle[] = [
   {

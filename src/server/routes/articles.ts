@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { ArticleRepository } from "../../repositories/ArticleRepository";
-import { anonymize } from "../../services/anonymize";
+import { ArticleRepository } from "@repositories";
+import { anonymize } from "@services";
 
 export function articlesRouter(articleRepo: ArticleRepository): Router {
   const router = Router();

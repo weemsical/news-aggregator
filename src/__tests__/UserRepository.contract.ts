@@ -1,5 +1,5 @@
-import { User } from "../types";
-import { UserRepository } from "../repositories/UserRepository";
+import { User } from "@types";
+import { UserRepository } from "@repositories";
 
 const makeUser = (overrides: Partial<User> = {}): User => ({
   id: "user-1",

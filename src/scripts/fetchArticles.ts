@@ -1,10 +1,8 @@
 import { feedSources } from "../data/feedSources";
 import { getAllFeedSources } from "../data/getAllFeedSources";
-import { fetchFeed } from "../services/RssFetcher";
-import { parseRssFeed } from "../services/RssParser";
-import { ArticleRepository } from "../repositories/ArticleRepository";
-import { FeedSourceRepository } from "../repositories/FeedSourceRepository";
-import { Article } from "../types";
+import { fetchFeed, parseRssFeed } from "@services";
+import { ArticleRepository, FeedSourceRepository } from "@repositories";
+import { Article } from "@types";
 
 export interface FetchResult {
   totalArticles: number;

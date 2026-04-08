@@ -1,4 +1,4 @@
-import { LeaderboardEntry } from "../types";
+import { LeaderboardEntry } from "@types";
 import "./SourceLeaderboard.css";
 
 interface SourceLeaderboardProps {

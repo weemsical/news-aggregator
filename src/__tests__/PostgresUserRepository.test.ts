@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { userRepositoryContractTests } from "./UserRepository.contract";
-import { PostgresUserRepository } from "../repositories/PostgresUserRepository";
+import { PostgresUserRepository } from "@repositories";
 import { runMigrations } from "../db/migrate";
 
 const describeWithDb = process.env.DATABASE_URL ? describe : describe.skip;

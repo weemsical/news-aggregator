@@ -1,4 +1,4 @@
-import { Article } from "../types";
+import { Article } from "@types";
 
 export interface ArticleRepository {
   save(article: Article): Promise<void>;

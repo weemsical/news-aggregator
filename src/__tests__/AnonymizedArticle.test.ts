@@ -1,4 +1,4 @@
-import { Article, AnonymizedArticle } from "../types";
+import { Article, AnonymizedArticle } from "@types";
 
 describe("AnonymizedArticle", () => {
   it("should exclude sourceId and url from the article", () => {

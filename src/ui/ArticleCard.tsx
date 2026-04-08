@@ -1,4 +1,4 @@
-import { AnonymizedArticle } from "../types";
+import { AnonymizedArticle } from "@types";
 import "./ArticleCard.css";
 
 interface ArticleCardProps {

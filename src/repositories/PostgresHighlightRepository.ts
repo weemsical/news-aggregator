@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Highlight } from "../types";
+import { Highlight } from "@types";
 import { HighlightRepository } from "./HighlightRepository";
 
 export class PostgresHighlightRepository implements HighlightRepository {

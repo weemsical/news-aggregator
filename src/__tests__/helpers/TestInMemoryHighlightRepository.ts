@@ -1,5 +1,5 @@
-import { Highlight } from "../../types";
-import { HighlightRepository } from "../../repositories/HighlightRepository";
+import { Highlight } from "@types";
+import { HighlightRepository } from "@repositories";
 
 export class TestInMemoryHighlightRepository implements HighlightRepository {
   private highlights: Map<string, Highlight> = new Map();

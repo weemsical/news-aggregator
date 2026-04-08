@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { AnonymizedArticle, Highlight } from "../types";
+import { AnonymizedArticle, Highlight } from "@types";
 import { fetchHighlights, createHighlight, updateHighlight, deleteHighlight } from "./apiClient";
 import { useAuth } from "./AuthContext";
 import { HighlightToggle, HighlightView } from "./HighlightToggle";

@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { User } from "../types";
+import { User } from "@types";
 import { UserRepository } from "./UserRepository";
 
 export class PostgresUserRepository implements UserRepository {

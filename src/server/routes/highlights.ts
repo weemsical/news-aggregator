@@ -1,30 +1,71 @@
 import { Router, Request } from "express";
-import { ArticleRepository } from "../../repositories/ArticleRepository";
-import { HighlightRepository } from "../../repositories/HighlightRepository";
+import { ArticleRepository, HighlightRepository, HighlightClusterRepository, VoteRepository } from "@repositories";
 import { requireAuth, optionalAuth } from "../middleware/requireAuth";
 import { anonRateLimit } from "../middleware/anonRateLimit";
 import { RequestHandler } from "express";
-
-let highlightIdCounter = 0;
+import { findOverlaps, ClusterService } from "@services";
+import crypto from "crypto";
 
 export function highlightsRouter(
   articleRepo: ArticleRepository,
   highlightRepo: HighlightRepository,
-  rateLimitMiddleware: RequestHandler = anonRateLimit
+  rateLimitMiddleware: RequestHandler = anonRateLimit,
+  clusterRepo?: HighlightClusterRepository,
+  voteRepo?: VoteRepository
 ): Router {
   const router = Router({ mergeParams: true });
+
+  const clusterService = clusterRepo
+    ? new ClusterService(highlightRepo, clusterRepo)
+    : null;
+
+  router.get("/check-overlap", requireAuth, async (req: Request<{ id: string }>, res) => {
+    const articleId = req.params.id;
+    const exists = await articleRepo.exists(articleId);
+    if (!exists) {
+      res.status(404).json({ error: "Article not found" });
+      return;
+    }
+
+    const paragraphIndex = parseInt(req.query.paragraphIndex as string);
+    const startOffset = parseInt(req.query.startOffset as string);
+    const endOffset = parseInt(req.query.endOffset as string);
+
+    if (isNaN(paragraphIndex) || isNaN(startOffset) || isNaN(endOffset)) {
+      res.status(400).json({ error: "paragraphIndex, startOffset, and endOffset are required query parameters" });
+      return;
+    }
+
+    const allHighlights = await highlightRepo.findByArticle(articleId);
+    const overlaps = findOverlaps(allHighlights, paragraphIndex, startOffset, endOffset);
+
+    res.json(overlaps);
+  });
 
   router.get("/", optionalAuth, async (req: Request<{ id: string }>, res) => {
     const articleId = req.params.id;
     const userId = req.query.userId as string | undefined;
 
+    let highlights;
     if (userId) {
-      const highlights = await highlightRepo.findByArticleAndUser(articleId, userId);
-      res.json(highlights);
+      highlights = await highlightRepo.findByArticleAndUser(articleId, userId);
     } else {
-      const highlights = await highlightRepo.findByArticle(articleId);
-      res.json(highlights);
+      highlights = await highlightRepo.findByArticle(articleId);
     }
+
+    // Enrich with vote counts if voteRepo available
+    if (voteRepo) {
+      const enriched = await Promise.all(
+        highlights.map(async (h) => {
+          const counts = await voteRepo.countByHighlight(h.id);
+          return { ...h, voteCounts: counts };
+        })
+      );
+      res.json(enriched);
+      return;
+    }
+
+    res.json(highlights);
   });
 
   router.post("/", optionalAuth, rateLimitMiddleware, async (req: Request<{ id: string }>, res) => {
@@ -59,10 +100,9 @@ export function highlightsRouter(
       return;
     }
 
-    highlightIdCounter++;
     const now = Date.now();
     const highlight = {
-      id: `highlight-${now}-${highlightIdCounter}`,
+      id: crypto.randomUUID(),
       articleId,
       userId: isAnonymous ? "anon" : req.user!.userId,
       paragraphIndex,
@@ -77,6 +117,12 @@ export function highlightsRouter(
     };
 
     await highlightRepo.save(highlight);
+
+    // Trigger cluster recalculation
+    if (clusterService && !isAnonymous) {
+      await clusterService.recalculateClusters(articleId, paragraphIndex);
+    }
+
     res.status(201).json(highlight);
   });
 
@@ -84,7 +130,8 @@ export function highlightsRouter(
 }
 
 export function highlightActionsRouter(
-  highlightRepo: HighlightRepository
+  highlightRepo: HighlightRepository,
+  clusterService?: ClusterService | null
 ): Router {
   const router = Router();
 
@@ -131,6 +178,12 @@ export function highlightActionsRouter(
     }
 
     await highlightRepo.delete(req.params.id);
+
+    // Trigger cluster recalculation
+    if (clusterService) {
+      await clusterService.recalculateClusters(highlight.articleId, highlight.paragraphIndex);
+    }
+
     res.status(204).send();
   });
 

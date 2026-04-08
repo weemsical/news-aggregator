@@ -1,6 +1,6 @@
 import { TestInMemoryArticleRepository } from "./helpers/TestInMemoryArticleRepository";
 import { TestInMemoryHighlightRepository } from "./helpers/TestInMemoryHighlightRepository";
-import { anonymize } from "../services/anonymize";
+import { anonymize } from "@services";
 import { seedArticles } from "../data/seedArticles";
 
 describe("Seed Articles", () => {
