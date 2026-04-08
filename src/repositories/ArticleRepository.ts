@@ -26,4 +26,6 @@ export interface ArticleRepository {
     pageSize: number;
   }): Promise<ArticlePage>;
   getScoresBySource(options?: { from?: number; to?: number }): Promise<SourceScoreRow[]>;
+  findByReviewStatus(status: string): Promise<Article[]>;
+  updateReviewStatus(id: string, status: string): Promise<Article | undefined>;
 }

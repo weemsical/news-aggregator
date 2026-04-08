@@ -7,17 +7,19 @@ export class PostgresFeedSourceRepository implements FeedSourceRepository {
 
   async save(source: FeedSource): Promise<void> {
     await this.pool.query(
-      `INSERT INTO feed_sources (source_id, name, feed_url, default_tags)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO feed_sources (source_id, name, feed_url, default_tags, publish_mode)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (source_id) DO UPDATE SET
          name = EXCLUDED.name,
          feed_url = EXCLUDED.feed_url,
-         default_tags = EXCLUDED.default_tags`,
+         default_tags = EXCLUDED.default_tags,
+         publish_mode = EXCLUDED.publish_mode`,
       [
         source.sourceId,
         source.name,
         source.feedUrl,
         JSON.stringify(source.defaultTags),
+        source.publishMode ?? "auto",
       ]
     );
   }
@@ -58,6 +60,7 @@ export class PostgresFeedSourceRepository implements FeedSourceRepository {
       name: row.name,
       feedUrl: row.feed_url,
       defaultTags: row.default_tags,
+      publishMode: row.publish_mode ?? "auto",
     };
   }
 }

@@ -1,17 +1,84 @@
-.admin-panel {
-  max-width: 600px;
+.admin-dashboard {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 900px;
   margin: 0 auto;
 }
 
-.admin-panel__title {
-  font-size: 1.4rem;
-  margin: 0 0 1rem;
+.admin-dashboard__sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.admin-dashboard__sidebar-title {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+  padding: 0 0.5rem;
+  color: #555;
+}
+
+.admin-dashboard__sidebar-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+  border-radius: 4px;
+}
+
+.admin-dashboard__sidebar-btn:hover {
+  background: #f0f0f0;
+}
+
+.admin-dashboard__sidebar-btn--active {
+  background: #e8e8e8;
+  font-weight: 600;
+}
+
+.admin-dashboard__sidebar-feed {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.35rem 0.75rem 0.35rem 1.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #666;
+  border-radius: 4px;
+}
+
+.admin-dashboard__sidebar-feed:hover {
+  background: #f0f0f0;
+}
+
+.admin-dashboard__sidebar-feed--active {
+  background: #e8e8e8;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-dashboard__content {
+  flex: 1;
+  min-width: 0;
 }
 
 .admin-panel__loading {
   text-align: center;
   color: #888;
   padding: 2rem 0;
+}
+
+.admin-panel__title {
+  font-size: 1.4rem;
+  margin: 0 0 1rem;
 }
 
 .admin-panel__error {
@@ -44,13 +111,20 @@
   margin-bottom: 0.2rem;
 }
 
-.admin-panel__field input {
+.admin-panel__field input[type="text"],
+.admin-panel__field input[type="url"],
+.admin-panel__field input[type="email"] {
   width: 100%;
   padding: 0.4rem 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.9rem;
   box-sizing: border-box;
+}
+
+.admin-panel__field--checkbox label {
+  display: inline;
+  font-size: 0.9rem;
 }
 
 .admin-panel__submit {
@@ -99,6 +173,7 @@
   align-items: baseline;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .admin-panel__source-name {
@@ -120,13 +195,20 @@
   text-transform: uppercase;
 }
 
+.admin-panel__badge--mode {
+  background: #d1e8ff;
+  color: #1a5276;
+}
+
 .admin-panel__source-actions {
   display: flex;
   gap: 0.5rem;
 }
 
 .admin-panel__fetch-btn,
-.admin-panel__delete-btn {
+.admin-panel__delete-btn,
+.admin-panel__approve-btn,
+.admin-panel__toggle-btn {
   font-size: 0.8rem;
   padding: 0.25rem 0.6rem;
   border: 1px solid #ccc;
@@ -136,12 +218,14 @@
   color: #444;
 }
 
-.admin-panel__fetch-btn:hover {
+.admin-panel__fetch-btn:hover,
+.admin-panel__toggle-btn:hover {
   background: #f5f5f5;
   border-color: #aaa;
 }
 
-.admin-panel__fetch-btn:disabled {
+.admin-panel__fetch-btn:disabled,
+.admin-panel__toggle-btn:disabled {
   color: #999;
   cursor: not-allowed;
 }
@@ -156,6 +240,20 @@
   border-color: #c0392b;
 }
 
+.admin-panel__approve-btn {
+  color: #27ae60;
+  border-color: #a3d9a5;
+}
+
+.admin-panel__approve-btn:hover {
+  background: #f0fdf4;
+  border-color: #27ae60;
+}
+
+.admin-panel__toggle-btn {
+  margin-left: 0.5rem;
+}
+
 .admin-panel__fetch-result {
   margin-top: 0.4rem;
   font-size: 0.8rem;
@@ -167,6 +265,45 @@
 
 .admin-panel__fetch-error {
   color: #c0392b;
+}
+
+.admin-panel__detail-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.admin-panel__detail-section p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.admin-panel__review-card {
+  padding: 1rem;
+}
+
+.admin-panel__review-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.admin-panel__review-body {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.75rem;
+  max-height: 150px;
+  overflow: hidden;
+}
+
+.admin-panel__review-body p {
+  margin: 0.3rem 0;
+}
+
+.admin-panel__review-more {
+  color: #999;
+  font-style: italic;
 }
 
 .admin-panel__divider {

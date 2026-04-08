@@ -1,7 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import { ArticleRepository, HighlightRepository, UserRepository, FeedSourceRepository, RawArticleRepository, VoteRepository, CommentRepository, HighlightClusterRepository } from "@repositories";
-import { articlesRouter, highlightsRouter, highlightActionsRouter, authRouter, scoresRouter, adminRouter, votesRouter, commentsRouter } from "@routes";
+import { ArticleRepository, HighlightRepository, UserRepository, FeedSourceRepository, RawArticleRepository, VoteRepository, CommentRepository, HighlightClusterRepository, ReplacementRuleRepository } from "@repositories";
+import { articlesRouter, highlightsRouter, highlightActionsRouter, authRouter, scoresRouter, adminRouter, votesRouter, commentsRouter, replacementRulesRouter } from "@routes";
 import { ClusterService, ScoringService } from "@services";
 import { RequestHandler } from "express";
 
@@ -14,10 +14,11 @@ interface AppDeps {
   votes: VoteRepository;
   comments: CommentRepository;
   highlightClusters: HighlightClusterRepository;
+  replacementRules: ReplacementRuleRepository;
   rateLimitMiddleware?: RequestHandler;
 }
 
-export function createApp({ articles, highlights, users, feedSources, rawArticles, votes, comments, highlightClusters, rateLimitMiddleware }: AppDeps) {
+export function createApp({ articles, highlights, users, feedSources, rawArticles, votes, comments, highlightClusters, replacementRules, rateLimitMiddleware }: AppDeps) {
   const app = express();
 
   const clusterService = new ClusterService(highlights, highlightClusters);
@@ -32,7 +33,8 @@ export function createApp({ articles, highlights, users, feedSources, rawArticle
   app.use("/api/highlights", votesRouter(highlights, votes, scoringService));
   app.use("/api/highlights", commentsRouter(highlights, votes, comments));
   app.use("/api/scores", scoresRouter(articles, feedSources));
-  app.use("/api/admin", adminRouter(feedSources, articles, users));
+  app.use("/api/admin", adminRouter(feedSources, articles, users, rawArticles, replacementRules));
+  app.use("/api/admin", replacementRulesRouter(replacementRules, rawArticles, users));
 
   return app;
 }

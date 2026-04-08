@@ -3,6 +3,7 @@ export interface FeedSource {
   name: string;
   feedUrl: string;
   defaultTags: string[];
+  publishMode?: "auto" | "manual";
 }
 
 export const feedSources: FeedSource[] = [

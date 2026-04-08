@@ -12,6 +12,7 @@ export interface AdminFeedSource {
   feedUrl: string;
   defaultTags: string[];
   isDynamic: boolean;
+  publishMode?: "auto" | "manual";
 }
 
 export interface FetchNowResult {
@@ -231,4 +232,145 @@ export async function removeAdmin(userId: string): Promise<void> {
     credentials: "include",
   });
   if (!response.ok) throw new Error("Failed to remove admin");
+}
+
+// Publish mode
+
+export async function updateFeedSource(
+  sourceId: string,
+  data: { publishMode?: string }
+): Promise<AdminFeedSource> {
+  const response = await fetch(`/api/admin/feed-sources/${sourceId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update feed source");
+  return response.json();
+}
+
+// Replacement rules
+
+export interface ReplacementRuleData {
+  id: string;
+  sourceId: string;
+  pattern: string;
+  replacementText: string;
+  isRegex: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export async function fetchReplacementRules(sourceId: string): Promise<ReplacementRuleData[]> {
+  const response = await fetch(`/api/admin/sources/${sourceId}/rules`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch replacement rules");
+  return response.json();
+}
+
+export async function createReplacementRule(
+  sourceId: string,
+  data: { pattern: string; replacementText: string; isRegex?: boolean }
+): Promise<ReplacementRuleData> {
+  const response = await fetch(`/api/admin/sources/${sourceId}/rules`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to create rule");
+  }
+  return response.json();
+}
+
+export async function updateReplacementRule(
+  id: string,
+  data: { pattern?: string; replacementText?: string; isRegex?: boolean }
+): Promise<ReplacementRuleData> {
+  const response = await fetch(`/api/admin/rules/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update rule");
+  return response.json();
+}
+
+export async function deleteReplacementRule(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/rules/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to delete rule");
+}
+
+export async function previewReplacementRule(
+  sourceId: string,
+  data: { pattern: string; replacementText: string; isRegex?: boolean }
+): Promise<{ matches: Array<{ articleId: string; original: string; replaced: string }> }> {
+  const response = await fetch(`/api/admin/sources/${sourceId}/rules/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to preview rule");
+  return response.json();
+}
+
+// Review queue
+
+export interface ReviewArticle {
+  id: string;
+  rawArticleId: string;
+  title: string;
+  body: string[];
+  sourceTags: string[];
+  sourceId: string;
+  url: string;
+  fetchedAt: number;
+  reviewStatus: string;
+  propagandaScore: number;
+}
+
+export async function fetchReviewQueue(): Promise<ReviewArticle[]> {
+  const response = await fetch("/api/admin/review-queue", {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch review queue");
+  return response.json();
+}
+
+export async function approveArticle(id: string): Promise<ReviewArticle> {
+  const response = await fetch(`/api/admin/articles/${id}/approve`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to approve article");
+  return response.json();
+}
+
+export async function rejectArticle(id: string): Promise<ReviewArticle> {
+  const response = await fetch(`/api/admin/articles/${id}/reject`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to reject article");
+  return response.json();
+}
+
+export async function reprocessArticle(
+  id: string
+): Promise<{ body: string[]; replacementMap: any[] }> {
+  const response = await fetch(`/api/admin/articles/${id}/reprocess`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to reprocess article");
+  return response.json();
 }

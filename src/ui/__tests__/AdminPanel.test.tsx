@@ -26,6 +26,18 @@ const mockAddAdminByEmail = apiClient.addAdminByEmail as jest.MockedFunction<
 const mockRemoveAdmin = apiClient.removeAdmin as jest.MockedFunction<
   typeof apiClient.removeAdmin
 >;
+const mockFetchReviewQueue = apiClient.fetchReviewQueue as jest.MockedFunction<
+  typeof apiClient.fetchReviewQueue
+>;
+const mockApproveArticle = apiClient.approveArticle as jest.MockedFunction<
+  typeof apiClient.approveArticle
+>;
+const mockRejectArticle = apiClient.rejectArticle as jest.MockedFunction<
+  typeof apiClient.rejectArticle
+>;
+const mockFetchReplacementRules = apiClient.fetchReplacementRules as jest.MockedFunction<
+  typeof apiClient.fetchReplacementRules
+>;
 
 const mockSources: apiClient.AdminFeedSource[] = [
   {
@@ -34,6 +46,7 @@ const mockSources: apiClient.AdminFeedSource[] = [
     feedUrl: "https://fox.com/feed",
     defaultTags: ["politics"],
     isDynamic: false,
+    publishMode: "auto",
   },
   {
     sourceId: "custom-src",
@@ -41,6 +54,7 @@ const mockSources: apiClient.AdminFeedSource[] = [
     feedUrl: "https://custom.com/feed.xml",
     defaultTags: ["test"],
     isDynamic: true,
+    publishMode: "manual",
   },
 ];
 
@@ -49,30 +63,45 @@ beforeEach(() => {
   mockFetchAdmins.mockResolvedValue([
     { id: "admin-1", email: "admin@example.com", isAdmin: true },
   ]);
+  mockFetchReviewQueue.mockResolvedValue([]);
+  mockFetchReplacementRules.mockResolvedValue([]);
   mockAddFeedSource.mockReset();
   mockDeleteFeedSource.mockReset();
   mockFetchNow.mockReset();
   mockAddAdminByEmail.mockReset();
   mockRemoveAdmin.mockReset();
+  mockApproveArticle.mockReset();
+  mockRejectArticle.mockReset();
 });
 
 describe("AdminPanel", () => {
-  it("renders source list after loading", async () => {
+  it("renders sidebar with feed sources and nav items", async () => {
     render(<AdminPanel />);
 
     await waitFor(() => {
-      expect(screen.getByText("Fox News")).toBeInTheDocument();
+      expect(screen.getByText("Feed Sources")).toBeInTheDocument();
     });
-    expect(screen.getByText("Custom Source")).toBeInTheDocument();
-    expect(screen.getByText("Current Sources (2)")).toBeInTheDocument();
+    expect(screen.getByText("Review Queue")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Manage Admins" })).toBeInTheDocument();
+    // Feed names appear in both sidebar and source list
+    expect(screen.getAllByText("Fox News").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Custom Source").length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows loading state initially", async () => {
     render(<AdminPanel />);
-    expect(screen.getByText("Loading feed sources...")).toBeInTheDocument();
+    expect(screen.getByText("Loading admin dashboard...")).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.queryByText("Loading feed sources...")).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading admin dashboard...")).not.toBeInTheDocument();
     });
+  });
+
+  it("shows source list with counts in default feeds view", async () => {
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("Manage Feed Sources")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Current Sources (2)")).toBeInTheDocument();
   });
 
   it("shows custom badge for dynamic sources", async () => {
@@ -85,7 +114,7 @@ describe("AdminPanel", () => {
   it("shows delete button only for dynamic sources", async () => {
     render(<AdminPanel />);
     await waitFor(() => {
-      expect(screen.getByText("Fox News")).toBeInTheDocument();
+      expect(screen.getAllByText("Fox News").length).toBeGreaterThanOrEqual(1);
     });
 
     const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
@@ -103,7 +132,7 @@ describe("AdminPanel", () => {
 
     render(<AdminPanel />);
     await waitFor(() => {
-      expect(screen.getByText("Fox News")).toBeInTheDocument();
+      expect(screen.getAllByText("Fox News").length).toBeGreaterThanOrEqual(1);
     });
 
     await userEvent.type(screen.getByLabelText("Source ID"), "new-source");
@@ -127,7 +156,7 @@ describe("AdminPanel", () => {
 
     render(<AdminPanel />);
     await waitFor(() => {
-      expect(screen.getByText("Custom Source")).toBeInTheDocument();
+      expect(screen.getAllByText("Custom Source").length).toBeGreaterThanOrEqual(1);
     });
 
     await userEvent.click(screen.getByRole("button", { name: /delete/i }));
@@ -145,7 +174,7 @@ describe("AdminPanel", () => {
 
     render(<AdminPanel />);
     await waitFor(() => {
-      expect(screen.getByText("Fox News")).toBeInTheDocument();
+      expect(screen.getAllByText("Fox News").length).toBeGreaterThanOrEqual(1);
     });
 
     const fetchButtons = screen.getAllByRole("button", { name: "Fetch Now" });
@@ -166,8 +195,14 @@ describe("AdminPanel", () => {
     });
   });
 
-  it("renders admin list", async () => {
+  it("navigates to admin management view", async () => {
     render(<AdminPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Feed Sources")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Manage Admins" }));
 
     await waitFor(() => {
       expect(screen.getByText("admin@example.com")).toBeInTheDocument();
@@ -184,7 +219,12 @@ describe("AdminPanel", () => {
 
     render(<AdminPanel />);
     await waitFor(() => {
-      expect(screen.getByText("Manage Admins")).toBeInTheDocument();
+      expect(screen.getByText("Feed Sources")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Manage Admins" }));
+    await waitFor(() => {
+      expect(screen.getByText("Manage Admins", { selector: "h2" })).toBeInTheDocument();
     });
 
     await userEvent.type(screen.getByLabelText("User Email"), "new@example.com");
@@ -200,6 +240,11 @@ describe("AdminPanel", () => {
 
     render(<AdminPanel />);
     await waitFor(() => {
+      expect(screen.getByText("Feed Sources")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Manage Admins" }));
+    await waitFor(() => {
       expect(screen.getByText("admin@example.com")).toBeInTheDocument();
     });
 
@@ -208,5 +253,92 @@ describe("AdminPanel", () => {
     await waitFor(() => {
       expect(mockRemoveAdmin).toHaveBeenCalledWith("admin-1");
     });
+  });
+
+  it("navigates to review queue", async () => {
+    mockFetchReviewQueue.mockResolvedValue([
+      {
+        id: "pending-1",
+        rawArticleId: "raw-1",
+        title: "Pending Article",
+        body: ["Content here."],
+        sourceTags: ["news"],
+        sourceId: "fox-news",
+        url: "https://example.com/1",
+        fetchedAt: Date.now(),
+        reviewStatus: "pending",
+        propagandaScore: 0,
+      },
+    ]);
+
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("Feed Sources")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Review Queue" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Pending Article")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
+  });
+
+  it("approves article from review queue", async () => {
+    mockFetchReviewQueue.mockResolvedValue([
+      {
+        id: "pending-1",
+        rawArticleId: "raw-1",
+        title: "Pending Article",
+        body: ["Content here."],
+        sourceTags: ["news"],
+        sourceId: "fox-news",
+        url: "https://example.com/1",
+        fetchedAt: Date.now(),
+        reviewStatus: "pending",
+        propagandaScore: 0,
+      },
+    ]);
+    mockApproveArticle.mockResolvedValue({
+      id: "pending-1",
+      rawArticleId: "raw-1",
+      title: "Pending Article",
+      body: ["Content here."],
+      sourceTags: ["news"],
+      sourceId: "fox-news",
+      url: "https://example.com/1",
+      fetchedAt: Date.now(),
+      reviewStatus: "approved",
+      propagandaScore: 0,
+    });
+
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("Feed Sources")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Review Queue" }));
+    await waitFor(() => {
+      expect(screen.getByText("Pending Article")).toBeInTheDocument();
+    });
+
+    // After approve, it reloads the queue
+    mockFetchReviewQueue.mockResolvedValue([]);
+    await userEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(mockApproveArticle).toHaveBeenCalledWith("pending-1");
+    });
+  });
+
+  it("shows publish mode badges", async () => {
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getAllByText("Fox News").length).toBeGreaterThanOrEqual(1);
+    });
+
+    expect(screen.getByText("manual")).toBeInTheDocument();
+    expect(screen.getAllByText("auto").length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -73,6 +73,20 @@ export class TestInMemoryArticleRepository implements ArticleRepository {
       .sort((a, b) => b.totalScore - a.totalScore);
   }
 
+  async findByReviewStatus(status: string): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .filter((a) => a.reviewStatus === status)
+      .sort((a, b) => b.fetchedAt - a.fetchedAt);
+  }
+
+  async updateReviewStatus(id: string, status: string): Promise<Article | undefined> {
+    const article = this.articles.get(id);
+    if (!article) return undefined;
+    const updated = { ...article, reviewStatus: status as Article["reviewStatus"] };
+    this.articles.set(id, updated);
+    return updated;
+  }
+
   async updateScore(id: string, score: number): Promise<void> {
     const article = this.articles.get(id);
     if (article) {

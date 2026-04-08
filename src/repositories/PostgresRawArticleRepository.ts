@@ -35,6 +35,14 @@ export class PostgresRawArticleRepository implements RawArticleRepository {
     return rows.length > 0 ? this.toRawArticle(rows[0]) : undefined;
   }
 
+  async findBySource(sourceId: string, limit = 10): Promise<RawArticle[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM raw_articles WHERE source_id = $1 ORDER BY fetched_at DESC LIMIT $2",
+      [sourceId, limit]
+    );
+    return rows.map((row) => this.toRawArticle(row));
+  }
+
   async count(): Promise<number> {
     const { rows } = await this.pool.query(
       "SELECT COUNT(*)::int AS count FROM raw_articles"

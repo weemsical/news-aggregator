@@ -27,6 +27,7 @@ describe("getAllFeedSources", () => {
       name: "Custom Source",
       feedUrl: "https://example.com/feed.xml",
       defaultTags: ["custom"],
+      publishMode: "auto",
     });
   });
 

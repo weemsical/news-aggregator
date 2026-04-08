@@ -5,7 +5,7 @@ export class TestInMemoryFeedSourceRepository implements FeedSourceRepository {
   private sources: Map<string, FeedSource> = new Map();
 
   async save(source: FeedSource): Promise<void> {
-    this.sources.set(source.sourceId, source);
+    this.sources.set(source.sourceId, { ...source, publishMode: source.publishMode ?? "auto" });
   }
 
   async findAll(): Promise<FeedSource[]> {

@@ -20,6 +20,13 @@ export class TestInMemoryRawArticleRepository implements RawArticleRepository {
     return this.rawArticles.get(id);
   }
 
+  async findBySource(sourceId: string, limit = 10): Promise<RawArticle[]> {
+    return Array.from(this.rawArticles.values())
+      .filter((r) => r.sourceId === sourceId)
+      .sort((a, b) => b.fetchedAt - a.fetchedAt)
+      .slice(0, limit);
+  }
+
   async count(): Promise<number> {
     return this.rawArticles.size;
   }

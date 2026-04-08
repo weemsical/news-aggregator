@@ -14,6 +14,8 @@ import { PostgresRawArticleRepository } from "./PostgresRawArticleRepository";
 import { PostgresVoteRepository } from "./PostgresVoteRepository";
 import { PostgresCommentRepository } from "./PostgresCommentRepository";
 import { PostgresHighlightClusterRepository } from "./PostgresHighlightClusterRepository";
+import { ReplacementRuleRepository } from "./ReplacementRuleRepository";
+import { PostgresReplacementRuleRepository } from "./PostgresReplacementRuleRepository";
 import { getPool } from "../db/pool";
 
 export interface Repositories {
@@ -25,6 +27,7 @@ export interface Repositories {
   votes: VoteRepository;
   comments: CommentRepository;
   highlightClusters: HighlightClusterRepository;
+  replacementRules: ReplacementRuleRepository;
 }
 
 export function createRepositories(): Repositories {
@@ -44,5 +47,6 @@ export function createRepositories(): Repositories {
     votes: new PostgresVoteRepository(pool),
     comments: new PostgresCommentRepository(pool),
     highlightClusters: new PostgresHighlightClusterRepository(pool),
+    replacementRules: new PostgresReplacementRuleRepository(pool),
   };
 }

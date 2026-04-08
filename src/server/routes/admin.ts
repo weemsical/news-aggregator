@@ -1,13 +1,15 @@
 import { Router } from "express";
-import { FeedSourceRepository, ArticleRepository, UserRepository } from "@repositories";
+import { FeedSourceRepository, ArticleRepository, UserRepository, RawArticleRepository, ReplacementRuleRepository } from "@repositories";
 import { requireAuth, createRequireAdmin } from "@middleware";
 import { getAllFeedSources } from "@data";
-import { fetchFeed, parseRssFeed } from "@services";
+import { fetchFeed, parseRssFeed, ReplacementService } from "@services";
 
 export function adminRouter(
   feedSourceRepo: FeedSourceRepository,
   articleRepo: ArticleRepository,
-  users: UserRepository
+  users: UserRepository,
+  rawArticleRepo?: RawArticleRepository,
+  replacementRuleRepo?: ReplacementRuleRepository
 ): Router {
   const router = Router();
   const requireAdmin = createRequireAdmin(users);
@@ -51,6 +53,7 @@ export function adminRouter(
       name: String(name).trim(),
       feedUrl: String(feedUrl).trim(),
       defaultTags: Array.isArray(defaultTags) ? defaultTags.map(String) : [],
+      publishMode: (req.body.publishMode === "manual" ? "manual" : "auto") as "auto" | "manual",
     };
 
     try {
@@ -74,6 +77,26 @@ export function adminRouter(
     }
   });
 
+  router.put("/feed-sources/:sourceId", async (req, res) => {
+    try {
+      const all = await getAllFeedSources(feedSourceRepo);
+      const existing = all.find((s) => s.sourceId === req.params.sourceId);
+      if (!existing) {
+        res.status(404).json({ error: "Feed source not found" });
+        return;
+      }
+
+      const updated = {
+        ...existing,
+        publishMode: (req.body.publishMode === "manual" ? "manual" : existing.publishMode ?? "auto") as "auto" | "manual",
+      };
+      await feedSourceRepo.save(updated);
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to update feed source" });
+    }
+  });
+
   router.post("/feed-sources/:sourceId/fetch", async (req, res) => {
     try {
       const all = await getAllFeedSources(feedSourceRepo);
@@ -89,18 +112,51 @@ export function adminRouter(
         return;
       }
 
-      const articles = parseRssFeed(result.xml, source);
+      const parsedArticles = parseRssFeed(result.xml, source);
       let savedCount = 0;
-      for (const article of articles) {
+
+      // Determine review status based on publish mode
+      const reviewStatus = source.publishMode === "manual" ? "pending" : "approved";
+
+      // Load replacement rules for this source
+      const rules = replacementRuleRepo
+        ? await replacementRuleRepo.findBySource(source.sourceId)
+        : [];
+
+      for (const article of parsedArticles) {
         const exists = await articleRepo.exists(article.id);
         if (!exists) {
-          await articleRepo.save(article);
+          // Save raw article first
+          if (rawArticleRepo) {
+            await rawArticleRepo.save({
+              id: article.rawArticleId,
+              title: article.title,
+              body: article.body,
+              sourceId: article.sourceId,
+              url: article.url,
+              fetchedAt: article.fetchedAt,
+            });
+          }
+
+          // Apply replacement rules
+          let processedBody = article.body;
+          if (rules.length > 0) {
+            const replaced = ReplacementService.applyRules(article.body, rules);
+            processedBody = replaced.processed;
+          }
+
+          // Save processed article with correct review status
+          await articleRepo.save({
+            ...article,
+            body: processedBody,
+            reviewStatus,
+          });
           savedCount++;
         }
       }
 
       res.json({
-        articlesFound: articles.length,
+        articlesFound: parsedArticles.length,
         newArticlesSaved: savedCount,
       });
     } catch {
@@ -149,6 +205,73 @@ export function adminRouter(
 
     const updated = await users.setAdmin(user.id, false);
     res.json({ id: updated!.id, email: updated!.email, isAdmin: updated!.isAdmin });
+  });
+
+  // Review queue routes
+  router.get("/review-queue", async (_req, res) => {
+    try {
+      const pending = await articleRepo.findByReviewStatus("pending");
+      res.json(pending);
+    } catch {
+      res.status(500).json({ error: "Failed to load review queue" });
+    }
+  });
+
+  router.post("/articles/:id/approve", async (req, res) => {
+    try {
+      const updated = await articleRepo.updateReviewStatus(req.params.id, "approved");
+      if (!updated) {
+        res.status(404).json({ error: "Article not found" });
+        return;
+      }
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to approve article" });
+    }
+  });
+
+  router.post("/articles/:id/reject", async (req, res) => {
+    try {
+      const updated = await articleRepo.updateReviewStatus(req.params.id, "rejected");
+      if (!updated) {
+        res.status(404).json({ error: "Article not found" });
+        return;
+      }
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to reject article" });
+    }
+  });
+
+  router.post("/articles/:id/reprocess", async (req, res) => {
+    try {
+      const article = await articleRepo.findById(req.params.id);
+      if (!article) {
+        res.status(404).json({ error: "Article not found" });
+        return;
+      }
+
+      if (!rawArticleRepo || !replacementRuleRepo) {
+        res.status(500).json({ error: "Reprocessing not available" });
+        return;
+      }
+
+      const rawArticle = await rawArticleRepo.findById(article.rawArticleId);
+      if (!rawArticle) {
+        res.status(404).json({ error: "Raw article not found" });
+        return;
+      }
+
+      const rules = await replacementRuleRepo.findBySource(article.sourceId);
+      const result = ReplacementService.applyRules(rawArticle.body, rules);
+
+      res.json({
+        body: result.processed,
+        replacementMap: result.replacementMap,
+      });
+    } catch {
+      res.status(500).json({ error: "Failed to reprocess article" });
+    }
   });
 
   return router;

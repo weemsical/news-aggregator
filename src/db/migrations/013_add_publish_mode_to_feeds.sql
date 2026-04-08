@@ -1,0 +1,1 @@
+ALTER TABLE feed_sources ADD COLUMN IF NOT EXISTS publish_mode TEXT NOT NULL DEFAULT 'auto';

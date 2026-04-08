@@ -133,6 +133,22 @@ export class PostgresArticleRepository implements ArticleRepository {
     }));
   }
 
+  async findByReviewStatus(status: string): Promise<Article[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM articles WHERE review_status = $1 ORDER BY fetched_at DESC",
+      [status]
+    );
+    return rows.map((row) => this.toArticle(row));
+  }
+
+  async updateReviewStatus(id: string, status: string): Promise<Article | undefined> {
+    const { rows } = await this.pool.query(
+      "UPDATE articles SET review_status = $1 WHERE id = $2 RETURNING *",
+      [status, id]
+    );
+    return rows.length > 0 ? this.toArticle(rows[0]) : undefined;
+  }
+
   async updateScore(id: string, score: number): Promise<void> {
     await this.pool.query(
       "UPDATE articles SET propaganda_score = $1 WHERE id = $2",

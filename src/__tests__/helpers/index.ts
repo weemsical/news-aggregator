@@ -7,3 +7,4 @@ export { TestInMemoryRawArticleRepository } from "./TestInMemoryRawArticleReposi
 export { TestInMemoryVoteRepository } from "./TestInMemoryVoteRepository";
 export { TestInMemoryCommentRepository } from "./TestInMemoryCommentRepository";
 export { TestInMemoryHighlightClusterRepository } from "./TestInMemoryHighlightClusterRepository";
+export { TestInMemoryReplacementRuleRepository } from "./TestInMemoryReplacementRuleRepository";

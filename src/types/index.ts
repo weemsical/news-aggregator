@@ -6,3 +6,4 @@ export { SourceScore } from "./SourceScore";
 export { Vote } from "./Vote";
 export { Comment } from "./Comment";
 export { HighlightCluster } from "./HighlightCluster";
+export { ReplacementRule } from "./ReplacementRule";
