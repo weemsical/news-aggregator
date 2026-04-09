@@ -14,6 +14,7 @@ jest.mock("../AuthContext", () => ({
 const mockUseAuth = authContext.useAuth as jest.MockedFunction<typeof authContext.useAuth>;
 const mockFetchHighlights = apiClient.fetchHighlights as jest.MockedFunction<typeof apiClient.fetchHighlights>;
 const mockCreateHighlight = apiClient.createHighlight as jest.MockedFunction<typeof apiClient.createHighlight>;
+const mockCheckOverlap = apiClient.checkOverlap as jest.MockedFunction<typeof apiClient.checkOverlap>;
 
 const article: AnonymizedArticle = {
   id: "reader-1",
@@ -45,6 +46,7 @@ jest.spyOn(selectionModule, "getSelectionInfo").mockReturnValue(null);
 beforeEach(() => {
   mockFetchHighlights.mockResolvedValue([]);
   mockCreateHighlight.mockReset();
+  mockCheckOverlap.mockResolvedValue([]);
   mockUseAuth.mockReturnValue(mockAuth);
 });
 
@@ -151,9 +153,11 @@ describe("ArticleReader", () => {
     const body = container.querySelector(".article-reader__body")!;
     fireEvent.mouseUp(body);
 
-    expect(screen.getByText("paragraph of the")).toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("paragraph of the")).toBeInTheDocument();
+      expect(screen.getByRole("textbox")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+    });
   });
 
   it("hides popover when cancel is clicked", async () => {
@@ -173,7 +177,10 @@ describe("ArticleReader", () => {
     await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
 
     fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
-    expect(screen.getByRole("textbox")).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByRole("textbox")).toBeInTheDocument();
+    });
 
     await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
@@ -430,6 +437,11 @@ describe("ArticleReader — auth & toggle", () => {
     await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
 
     fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
+
+    await waitFor(() => {
+      expect(screen.getByRole("textbox")).toBeInTheDocument();
+    });
+
     await userEvent.type(screen.getByRole("textbox"), "Loaded language");
     await userEvent.click(screen.getByRole("button", { name: /submit/i }));
 
@@ -466,6 +478,11 @@ describe("ArticleReader — auth & toggle", () => {
     await waitFor(() => expect(mockFetchHighlights).toHaveBeenCalled());
 
     fireEvent.mouseUp(container.querySelector(".article-reader__body")!);
+
+    await waitFor(() => {
+      expect(screen.getByRole("textbox")).toBeInTheDocument();
+    });
+
     await userEvent.type(screen.getByRole("textbox"), "Loaded language");
     await userEvent.click(screen.getByRole("button", { name: /submit/i }));
 

@@ -81,3 +81,18 @@
   background-color: #fff3cd;
   border-bottom: 2px solid #e6a817;
 }
+
+.article-reader__highlight-badge {
+  display: inline-block;
+  background: #4a90d9;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 1rem;
+  height: 1rem;
+  line-height: 1rem;
+  text-align: center;
+  margin-left: 2px;
+  vertical-align: super;
+}

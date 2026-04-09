@@ -17,7 +17,7 @@ describe("splitByOffsets", () => {
 
     expect(result).toEqual([
       { text: "The witness ", highlighted: false },
-      { text: "accused the committee", highlighted: true, highlightId: "h-1" },
+      { text: "accused the committee", highlighted: true, highlightId: "h-1", highlightIds: ["h-1"], userId: undefined },
       { text: " of leveraging testimony.", highlighted: false },
     ]);
   });
@@ -29,7 +29,7 @@ describe("splitByOffsets", () => {
     );
 
     expect(result).toEqual([
-      { text: "Breaking news", highlighted: true, highlightId: "h-2" },
+      { text: "Breaking news", highlighted: true, highlightId: "h-2", highlightIds: ["h-2"], userId: undefined },
       { text: " arrived today.", highlighted: false },
     ]);
   });
@@ -42,7 +42,7 @@ describe("splitByOffsets", () => {
 
     expect(result).toEqual([
       { text: "Critics say the plan ", highlighted: false },
-      { text: "is dangerous.", highlighted: true, highlightId: "h-3" },
+      { text: "is dangerous.", highlighted: true, highlightId: "h-3", highlightIds: ["h-3"], userId: undefined },
     ]);
   });
 
@@ -53,7 +53,7 @@ describe("splitByOffsets", () => {
     );
 
     expect(result).toEqual([
-      { text: "This is propaganda.", highlighted: true, highlightId: "h-4" },
+      { text: "This is propaganda.", highlighted: true, highlightId: "h-4", highlightIds: ["h-4"], userId: undefined },
     ]);
   });
 
@@ -68,9 +68,9 @@ describe("splitByOffsets", () => {
 
     expect(result).toEqual([
       { text: "The ", highlighted: false },
-      { text: "radical plan", highlighted: true, highlightId: "h-5" },
+      { text: "radical plan", highlighted: true, highlightId: "h-5", highlightIds: ["h-5"], userId: undefined },
       { text: " will destroy jobs and ", highlighted: false },
-      { text: "ruin the economy", highlighted: true, highlightId: "h-6" },
+      { text: "ruin the economy", highlighted: true, highlightId: "h-6", highlightIds: ["h-6"], userId: undefined },
       { text: ".", highlighted: false },
     ]);
   });
@@ -116,5 +116,34 @@ describe("splitByOffsets", () => {
     );
 
     expect(result[1].userId).toBe("anon");
+  });
+
+  it("handles overlapping highlights by merging into segments with multiple IDs", () => {
+    //  0         1         2         3
+    //  0123456789012345678901234567890123456
+    // "The radical plan is dangerous to all."
+    // h-a: 4-16  "radical plan"
+    // h-b: 12-29 "plan is dangerous"
+    const result = splitByOffsets(
+      "The radical plan is dangerous to all.",
+      [
+        { startOffset: 4, endOffset: 16, id: "h-a", userId: "user-1" },
+        { startOffset: 12, endOffset: 29, id: "h-b", userId: "user-2" },
+      ]
+    );
+
+    // "The " (0-4) = unhighlighted
+    // "radical " (4-12) = h-a only
+    // "plan" (12-16) = h-a + h-b overlap
+    // " is dangerous" (16-29) = h-b only
+    // "s to all." (29-37) = unhighlighted
+    expect(result[0]).toEqual({ text: "The ", highlighted: false });
+    expect(result[1].highlighted).toBe(true);
+    expect(result[1].highlightIds).toEqual(["h-a"]);
+    expect(result[2].highlighted).toBe(true);
+    expect(result[2].highlightIds).toEqual(["h-a", "h-b"]);
+    expect(result[3].highlighted).toBe(true);
+    expect(result[3].highlightIds).toEqual(["h-b"]);
+    expect(result[4]).toEqual({ text: " to all.", highlighted: false });
   });
 });

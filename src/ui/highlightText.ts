@@ -2,6 +2,7 @@ export interface TextSegment {
   text: string;
   highlighted: boolean;
   highlightId?: string;
+  highlightIds?: string[];
   userId?: string;
 }
 
@@ -20,33 +21,39 @@ export function splitByOffsets(
     return [{ text: paragraphText, highlighted: false }];
   }
 
-  const sorted = [...highlights].sort((a, b) => a.startOffset - b.startOffset);
-
-  const segments: TextSegment[] = [];
-  let cursor = 0;
-
-  for (const highlight of sorted) {
-    const start = Math.max(highlight.startOffset, cursor);
-    const end = Math.min(highlight.endOffset, paragraphText.length);
-
-    if (start >= end) continue;
-
-    if (start > cursor) {
-      segments.push({ text: paragraphText.slice(cursor, start), highlighted: false });
-    }
-
-    segments.push({
-      text: paragraphText.slice(start, end),
-      highlighted: true,
-      highlightId: highlight.id,
-      userId: highlight.userId,
-    });
-
-    cursor = end;
+  // Collect all boundary points
+  const boundaries = new Set<number>();
+  boundaries.add(0);
+  boundaries.add(paragraphText.length);
+  for (const h of highlights) {
+    boundaries.add(Math.max(0, h.startOffset));
+    boundaries.add(Math.min(paragraphText.length, h.endOffset));
   }
 
-  if (cursor < paragraphText.length) {
-    segments.push({ text: paragraphText.slice(cursor), highlighted: false });
+  const sortedBoundaries = [...boundaries].sort((a, b) => a - b);
+  const segments: TextSegment[] = [];
+
+  for (let i = 0; i < sortedBoundaries.length - 1; i++) {
+    const start = sortedBoundaries[i];
+    const end = sortedBoundaries[i + 1];
+    if (start >= end) continue;
+
+    const covering = highlights.filter(
+      (h) => h.startOffset <= start && h.endOffset >= end
+    );
+
+    if (covering.length === 0) {
+      segments.push({ text: paragraphText.slice(start, end), highlighted: false });
+    } else {
+      // Use first covering highlight's userId for color; track all IDs
+      segments.push({
+        text: paragraphText.slice(start, end),
+        highlighted: true,
+        highlightId: covering[0].id,
+        highlightIds: covering.map((h) => h.id),
+        userId: covering.some((h) => h.userId !== "anon") ? covering[0].userId : "anon",
+      });
+    }
   }
 
   return segments;

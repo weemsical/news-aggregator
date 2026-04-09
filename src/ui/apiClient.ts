@@ -1,4 +1,4 @@
-import { AnonymizedArticle, Highlight, SourceScore } from "@types";
+import { AnonymizedArticle, Highlight, SourceScore, Vote, Comment } from "@types";
 
 export interface AuthUser {
   id: string;
@@ -415,6 +415,95 @@ export async function acknowledgeNotification(id: string): Promise<void> {
     credentials: "include",
   });
   if (!response.ok) throw new Error("Failed to acknowledge notification");
+}
+
+// Votes
+
+export interface VoteCounts {
+  agrees: number;
+  disagrees: number;
+  userVote: "agree" | "disagree" | null;
+}
+
+export async function fetchVotes(highlightId: string): Promise<VoteCounts> {
+  const response = await fetch(`/api/highlights/${highlightId}/votes`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch votes");
+  return response.json();
+}
+
+export async function castVote(
+  highlightId: string,
+  data: { voteType: "agree" | "disagree"; reason?: string }
+): Promise<Vote> {
+  const response = await fetch(`/api/highlights/${highlightId}/votes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to cast vote");
+  }
+  return response.json();
+}
+
+// Comments
+
+export interface CommentsResponse {
+  comments: Comment[];
+  total: number;
+  warning: string | null;
+}
+
+export async function fetchComments(highlightId: string): Promise<CommentsResponse> {
+  const response = await fetch(`/api/highlights/${highlightId}/comments`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch comments");
+  return response.json();
+}
+
+export async function createComment(
+  highlightId: string,
+  data: { text: string; replyToId?: string }
+): Promise<Comment & { warning: string | null }> {
+  const response = await fetch(`/api/highlights/${highlightId}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to create comment");
+  }
+  return response.json();
+}
+
+// Overlap check
+
+export interface OverlapResult {
+  highlight: Highlight;
+  overlapPercentage: number;
+}
+
+export async function checkOverlap(
+  articleId: string,
+  params: { paragraphIndex: number; startOffset: number; endOffset: number }
+): Promise<OverlapResult[]> {
+  const qs = new URLSearchParams({
+    paragraphIndex: String(params.paragraphIndex),
+    startOffset: String(params.startOffset),
+    endOffset: String(params.endOffset),
+  }).toString();
+  const response = await fetch(`/api/articles/${articleId}/highlights/check-overlap?${qs}`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to check overlaps");
+  return response.json();
 }
 
 // Manual article refresh

@@ -11,9 +11,10 @@ interface HighlightedParagraphProps {
   text: string;
   paragraphIndex: number;
   highlights: HighlightRef[];
+  onHighlightClick?: (highlightIds: string[], event: React.MouseEvent) => void;
 }
 
-export function HighlightedParagraph({ text, paragraphIndex, highlights }: HighlightedParagraphProps) {
+export function HighlightedParagraph({ text, paragraphIndex, highlights, onHighlightClick }: HighlightedParagraphProps) {
   const segments = splitByOffsets(text, highlights);
 
   return (
@@ -25,9 +26,22 @@ export function HighlightedParagraph({ text, paragraphIndex, highlights }: Highl
         const colorClass = seg.userId === "anon"
           ? "article-reader__highlight--anon"
           : "article-reader__highlight--registered";
+        const ids = seg.highlightIds || [];
         return (
-          <mark key={i} className={`article-reader__highlight ${colorClass}`}>
+          <mark
+            key={i}
+            className={`article-reader__highlight ${colorClass}`}
+            onClick={(e) => {
+              if (ids.length > 0 && onHighlightClick) {
+                e.stopPropagation();
+                onHighlightClick(ids, e);
+              }
+            }}
+          >
             {seg.text}
+            {ids.length > 1 && (
+              <span className="article-reader__highlight-badge">{ids.length}</span>
+            )}
           </mark>
         );
       })}
