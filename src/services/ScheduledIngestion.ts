@@ -1,9 +1,7 @@
 import { ArticleRepository, RawArticleRepository, FeedSourceRepository, ReplacementRuleRepository } from "@repositories";
-import { FeedSource, getAllFeedSources } from "@data";
-import { fetchFeed } from "./RssFetcher";
-import { parseRssFeed } from "./RssParser";
-import { ReplacementService } from "./ReplacementService";
+import { getAllFeedSources } from "@data";
 import { NotificationService } from "./NotificationService";
+import { IngestionService, FeedResult } from "./IngestionService";
 
 export interface IngestionDeps {
   articles: ArticleRepository;
@@ -11,13 +9,6 @@ export interface IngestionDeps {
   feedSources: FeedSourceRepository;
   replacementRules: ReplacementRuleRepository;
   notificationService?: NotificationService;
-}
-
-export interface FeedResult {
-  sourceId: string;
-  success: boolean;
-  articlesSaved: number;
-  error?: string;
 }
 
 export interface IngestionResult {
@@ -33,70 +24,35 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchSingleFeed(
-  source: FeedSource,
+async function fetchSingleFeedWithRetry(
+  source: { sourceId: string; name: string; feedUrl: string; defaultTags: string[]; publishMode?: "auto" | "manual" },
   deps: IngestionDeps,
   options: IngestionOptions
 ): Promise<FeedResult> {
   const maxRetries = 3;
   const baseDelay = options.retryDelayMs ?? 1000;
 
+  const serviceDeps = {
+    articles: deps.articles,
+    rawArticles: deps.rawArticles,
+    replacementRules: deps.replacementRules,
+  };
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const result = await fetchFeed(source.feedUrl);
+    const result = await IngestionService.fetchAndSaveFeed(source, serviceDeps);
 
-    if (result.ok && result.xml) {
-      const parsedArticles = parseRssFeed(result.xml, source);
-      const reviewStatus = source.publishMode === "manual" ? "pending" : "approved";
+    if (result.success) {
+      return result;
+    }
 
-      const rules = await deps.replacementRules.findBySource(source.sourceId);
-
-      let savedCount = 0;
-      for (const article of parsedArticles) {
-        const exists = await deps.articles.exists(article.id);
-        if (!exists) {
-          // Save raw article
-          await deps.rawArticles.save({
-            id: article.rawArticleId,
-            title: article.title,
-            body: article.body,
-            sourceId: article.sourceId,
-            url: article.url,
-            fetchedAt: article.fetchedAt,
-          });
-
-          // Apply replacement rules
-          let processedBody = article.body;
-          if (rules.length > 0) {
-            const replaced = ReplacementService.applyRules(article.body, rules);
-            processedBody = replaced.processed;
-          }
-
-          // Save processed article
-          await deps.articles.save({
-            ...article,
-            body: processedBody,
-            reviewStatus,
-          });
-          savedCount++;
-        }
-      }
-
-      return { sourceId: source.sourceId, success: true, articlesSaved: savedCount };
+    // If articles were saved (partial success) or this is the last attempt, return as-is
+    if (attempt === maxRetries - 1) {
+      return result;
     }
 
     // Retry with exponential backoff
-    if (attempt < maxRetries - 1 && baseDelay > 0) {
+    if (baseDelay > 0) {
       await sleep(baseDelay * Math.pow(2, attempt));
-    }
-
-    // Last attempt failed
-    if (attempt === maxRetries - 1) {
-      return {
-        sourceId: source.sourceId,
-        success: false,
-        articlesSaved: 0,
-        error: result.error ?? "Unknown error",
-      };
     }
   }
 
@@ -109,7 +65,7 @@ export class ScheduledIngestion {
 
     // Fetch all feeds in parallel
     const feedResults = await Promise.all(
-      allSources.map((source) => fetchSingleFeed(source, deps, options))
+      allSources.map((source) => fetchSingleFeedWithRetry(source, deps, options))
     );
 
     const totalArticlesSaved = feedResults.reduce((sum, r) => sum + r.articlesSaved, 0);

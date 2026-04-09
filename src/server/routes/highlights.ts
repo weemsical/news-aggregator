@@ -55,12 +55,12 @@ export function highlightsRouter(
 
     // Enrich with vote counts if voteRepo available
     if (voteRepo) {
-      const enriched = await Promise.all(
-        highlights.map(async (h) => {
-          const counts = await voteRepo.countByHighlight(h.id);
-          return { ...h, voteCounts: counts };
-        })
-      );
+      const ids = highlights.map((h) => h.id);
+      const countsMap = await voteRepo.countByHighlights(ids);
+      const enriched = highlights.map((h) => ({
+        ...h,
+        voteCounts: countsMap.get(h.id) ?? { agrees: 0, disagrees: 0 },
+      }));
       res.json(enriched);
       return;
     }

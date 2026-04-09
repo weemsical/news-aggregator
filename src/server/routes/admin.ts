@@ -2,7 +2,7 @@ import { Router } from "express";
 import { FeedSourceRepository, ArticleRepository, UserRepository, RawArticleRepository, ReplacementRuleRepository } from "@repositories";
 import { requireAuth, createRequireAdmin } from "@middleware";
 import { getAllFeedSources } from "@data";
-import { fetchFeed, parseRssFeed, ReplacementService, ScheduledIngestion } from "@services";
+import { ReplacementService, ScheduledIngestion, IngestionService } from "@services";
 
 export function adminRouter(
   feedSourceRepo: FeedSourceRepository,
@@ -106,58 +106,25 @@ export function adminRouter(
         return;
       }
 
-      const result = await fetchFeed(source.feedUrl);
-      if (!result.ok || !result.xml) {
+      if (!rawArticleRepo || !replacementRuleRepo) {
+        res.status(500).json({ error: "Fetch not available" });
+        return;
+      }
+
+      const result = await IngestionService.fetchAndSaveFeed(source, {
+        articles: articleRepo,
+        rawArticles: rawArticleRepo,
+        replacementRules: replacementRuleRepo,
+      });
+
+      if (!result.success) {
         res.status(502).json({ error: `Failed to fetch feed: ${result.error}` });
         return;
       }
 
-      const parsedArticles = parseRssFeed(result.xml, source);
-      let savedCount = 0;
-
-      // Determine review status based on publish mode
-      const reviewStatus = source.publishMode === "manual" ? "pending" : "approved";
-
-      // Load replacement rules for this source
-      const rules = replacementRuleRepo
-        ? await replacementRuleRepo.findBySource(source.sourceId)
-        : [];
-
-      for (const article of parsedArticles) {
-        const exists = await articleRepo.exists(article.id);
-        if (!exists) {
-          // Save raw article first
-          if (rawArticleRepo) {
-            await rawArticleRepo.save({
-              id: article.rawArticleId,
-              title: article.title,
-              body: article.body,
-              sourceId: article.sourceId,
-              url: article.url,
-              fetchedAt: article.fetchedAt,
-            });
-          }
-
-          // Apply replacement rules
-          let processedBody = article.body;
-          if (rules.length > 0) {
-            const replaced = ReplacementService.applyRules(article.body, rules);
-            processedBody = replaced.processed;
-          }
-
-          // Save processed article with correct review status
-          await articleRepo.save({
-            ...article,
-            body: processedBody,
-            reviewStatus,
-          });
-          savedCount++;
-        }
-      }
-
       res.json({
-        articlesFound: parsedArticles.length,
-        newArticlesSaved: savedCount,
+        articlesFound: result.articlesFound ?? 0,
+        newArticlesSaved: result.articlesSaved,
       });
     } catch {
       res.status(500).json({ error: "Failed to fetch articles" });

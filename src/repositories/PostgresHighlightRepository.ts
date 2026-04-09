@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Highlight } from "@types";
 import { HighlightRepository } from "./HighlightRepository";
+import { HighlightRow } from "./dbRowTypes";
 
 export class PostgresHighlightRepository implements HighlightRepository {
   constructor(private pool: Pool) {}
@@ -99,7 +100,7 @@ export class PostgresHighlightRepository implements HighlightRepository {
     return rows[0].count;
   }
 
-  private toHighlight(row: any): Highlight {
+  private toHighlight(row: HighlightRow): Highlight {
     return {
       id: row.id,
       articleId: row.article_id,

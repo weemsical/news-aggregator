@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { ReplacementRule } from "@types";
 import { ReplacementRuleRepository } from "./ReplacementRuleRepository";
+import { ReplacementRuleRow } from "./dbRowTypes";
 
 export class PostgresReplacementRuleRepository implements ReplacementRuleRepository {
   constructor(private pool: Pool) {}
@@ -46,7 +47,7 @@ export class PostgresReplacementRuleRepository implements ReplacementRuleReposit
     return rows.length > 0 ? this.toRule(rows[0]) : undefined;
   }
 
-  private toRule(row: any): ReplacementRule {
+  private toRule(row: ReplacementRuleRow): ReplacementRule {
     return {
       id: row.id,
       sourceId: row.source_id,

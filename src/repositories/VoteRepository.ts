@@ -12,6 +12,7 @@ export interface VoteRepository {
   findByHighlight(highlightId: string): Promise<Vote[]>;
   findByHighlightAndUser(highlightId: string, userId: string): Promise<Vote | undefined>;
   countByHighlight(highlightId: string): Promise<VoteCounts>;
+  countByHighlights(highlightIds: string[]): Promise<Map<string, VoteCounts>>;
   findByHighlights(highlightIds: string[]): Promise<Vote[]>;
   count(): Promise<number>;
 }

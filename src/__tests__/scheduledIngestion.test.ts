@@ -169,6 +169,41 @@ describe("ScheduledIngestion", () => {
     expect(src1Articles.some((a) => a.body.some((p) => p.includes("[redacted]")))).toBe(true);
   });
 
+  it("does not persist raw article when article save fails", async () => {
+    const deps = buildDeps();
+    await deps.feedSources.save({
+      sourceId: "src-1", name: "Source 1",
+      feedUrl: "https://src1.com/feed", defaultTags: ["news"], publishMode: "auto",
+    });
+
+    const rssWithOneArticle = `<?xml version="1.0"?>
+    <rss version="2.0"><channel>
+      <item><title>Fail Article</title><link>https://example.com/fail</link><description>Content</description></item>
+    </channel></rss>`;
+
+    mockFetchFeed.mockResolvedValue({ ok: true, xml: rssWithOneArticle });
+
+    // Make article save throw after raw article is saved
+    const originalSave = deps.articles.save.bind(deps.articles);
+    jest.spyOn(deps.articles, "save").mockImplementation(async (article) => {
+      if (article.sourceId === "src-1") {
+        throw new Error("Simulated article save failure");
+      }
+      return originalSave(article);
+    });
+
+    const result = await ScheduledIngestion.runIngestion(deps, { retryDelayMs: 0 });
+
+    // src-1 should have failed
+    const src1Result = result.feedResults.find((r) => r.sourceId === "src-1");
+    expect(src1Result!.success).toBe(false);
+
+    // Raw articles for src-1 should NOT be persisted (transactional rollback)
+    const rawCount = await deps.rawArticles.count();
+    const rawArticles = await deps.rawArticles.findBySource("src-1");
+    expect(rawArticles.length).toBe(0);
+  });
+
   it("fetches multiple feeds in parallel", async () => {
     const deps = buildDeps();
     await deps.feedSources.save({

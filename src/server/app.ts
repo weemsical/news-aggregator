@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import { ArticleRepository, HighlightRepository, UserRepository, FeedSourceRepository, RawArticleRepository, VoteRepository, CommentRepository, HighlightClusterRepository, ReplacementRuleRepository, NotificationRepository } from "@repositories";
 import { articlesRouter, highlightsRouter, highlightActionsRouter, authRouter, scoresRouter, adminRouter, votesRouter, commentsRouter, replacementRulesRouter, notificationsRouter } from "@routes";
 import { ClusterService, ScoringService, NotificationService } from "@services";
+import { errorHandler } from "./middleware/errorHandler";
 import { RequestHandler } from "express";
 
 interface AppDeps {
@@ -17,14 +18,15 @@ interface AppDeps {
   replacementRules: ReplacementRuleRepository;
   notifications: NotificationRepository;
   rateLimitMiddleware?: RequestHandler;
+  notificationService?: NotificationService;
 }
 
-export function createApp({ articles, highlights, users, feedSources, rawArticles, votes, comments, highlightClusters, replacementRules, notifications, rateLimitMiddleware }: AppDeps) {
+export function createApp({ articles, highlights, users, feedSources, rawArticles, votes, comments, highlightClusters, replacementRules, notifications, rateLimitMiddleware, notificationService: externalNotificationService }: AppDeps) {
   const app = express();
 
   const clusterService = new ClusterService(highlights, highlightClusters);
-  const scoringService = new ScoringService(highlightClusters, votes, articles);
-  const notificationService = new NotificationService(notifications, highlights, users, comments);
+  const scoringService = new ScoringService(highlightClusters, votes, articles, highlights);
+  const notificationService = externalNotificationService ?? new NotificationService(notifications, highlights, users, comments);
 
   app.use(express.json());
   app.use(cookieParser());
@@ -38,6 +40,8 @@ export function createApp({ articles, highlights, users, feedSources, rawArticle
   app.use("/api/admin", adminRouter(feedSources, articles, users, rawArticles, replacementRules));
   app.use("/api/admin", replacementRulesRouter(replacementRules, rawArticles, users));
   app.use("/api/notifications", notificationsRouter(notifications, users));
+
+  app.use(errorHandler);
 
   return app;
 }

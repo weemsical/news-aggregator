@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { HighlightCluster } from "@types";
 import { HighlightClusterRepository } from "./HighlightClusterRepository";
+import { HighlightClusterRow } from "./dbRowTypes";
 
 export class PostgresHighlightClusterRepository implements HighlightClusterRepository {
   constructor(private pool: Pool) {}
@@ -65,7 +66,7 @@ export class PostgresHighlightClusterRepository implements HighlightClusterRepos
     return rows[0].count;
   }
 
-  private toCluster(row: any): HighlightCluster {
+  private toCluster(row: HighlightClusterRow): HighlightCluster {
     return {
       id: row.id,
       articleId: row.article_id,

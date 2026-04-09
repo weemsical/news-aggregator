@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { FeedSource } from "@data";
 import { FeedSourceRepository } from "./FeedSourceRepository";
+import { FeedSourceRow } from "./dbRowTypes";
 
 export class PostgresFeedSourceRepository implements FeedSourceRepository {
   constructor(private pool: Pool) {}
@@ -54,7 +55,7 @@ export class PostgresFeedSourceRepository implements FeedSourceRepository {
     return rows[0].count;
   }
 
-  private toFeedSource(row: any): FeedSource {
+  private toFeedSource(row: FeedSourceRow): FeedSource {
     return {
       sourceId: row.source_id,
       name: row.name,

@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Comment } from "@types";
 import { CommentRepository } from "./CommentRepository";
+import { CommentRow } from "./dbRowTypes";
 
 export class PostgresCommentRepository implements CommentRepository {
   constructor(private pool: Pool) {}
@@ -39,7 +40,7 @@ export class PostgresCommentRepository implements CommentRepository {
     return rows[0].count;
   }
 
-  private toComment(row: any): Comment {
+  private toComment(row: CommentRow): Comment {
     return {
       id: row.id,
       highlightId: row.highlight_id,

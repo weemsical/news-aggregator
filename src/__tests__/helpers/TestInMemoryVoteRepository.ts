@@ -57,6 +57,14 @@ export class TestInMemoryVoteRepository implements VoteRepository {
     };
   }
 
+  async countByHighlights(highlightIds: string[]): Promise<Map<string, VoteCounts>> {
+    const result = new Map<string, VoteCounts>();
+    for (const id of highlightIds) {
+      result.set(id, await this.countByHighlight(id));
+    }
+    return result;
+  }
+
   async count(): Promise<number> {
     return this.votes.size;
   }

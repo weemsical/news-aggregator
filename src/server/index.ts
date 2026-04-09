@@ -20,11 +20,12 @@ async function start() {
 
   await loadSeedData({ articles: repos.articles, rawArticles: repos.rawArticles });
 
-  const app = createApp(repos);
-
   const notificationService = new NotificationService(
     repos.notifications, repos.highlights, repos.users, repos.comments
   );
+
+  const app = createApp({ ...repos, notificationService });
+
   startCronJobs({
     articles: repos.articles,
     rawArticles: repos.rawArticles,

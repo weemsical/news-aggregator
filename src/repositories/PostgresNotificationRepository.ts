@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Notification } from "@types";
 import { NotificationRepository } from "./NotificationRepository";
+import { NotificationRow } from "./dbRowTypes";
 
 export class PostgresNotificationRepository implements NotificationRepository {
   constructor(private pool: Pool) {}
@@ -72,7 +73,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
     return rows.length > 0 ? this.toNotification(rows[0]) : undefined;
   }
 
-  private toNotification(row: any): Notification {
+  private toNotification(row: NotificationRow): Notification {
     return {
       id: row.id,
       userId: row.user_id,

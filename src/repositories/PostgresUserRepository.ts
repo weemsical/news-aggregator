@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { User } from "@types";
 import { UserRepository } from "./UserRepository";
+import { UserRow } from "./dbRowTypes";
 
 export class PostgresUserRepository implements UserRepository {
   constructor(private pool: Pool) {}
@@ -61,7 +62,7 @@ export class PostgresUserRepository implements UserRepository {
     return rows[0].count;
   }
 
-  private toUser(row: any): User {
+  private toUser(row: UserRow): User {
     return {
       id: row.id,
       email: row.email,

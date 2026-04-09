@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Vote } from "@types";
 import { VoteRepository, VoteCounts } from "./VoteRepository";
+import { VoteRow } from "./dbRowTypes";
 
 export class PostgresVoteRepository implements VoteRepository {
   constructor(private pool: Pool) {}
@@ -67,12 +68,35 @@ export class PostgresVoteRepository implements VoteRepository {
     return { agrees: rows[0].agrees, disagrees: rows[0].disagrees };
   }
 
+  async countByHighlights(highlightIds: string[]): Promise<Map<string, VoteCounts>> {
+    const result = new Map<string, VoteCounts>();
+    if (highlightIds.length === 0) return result;
+
+    const placeholders = highlightIds.map((_, i) => `$${i + 1}`).join(", ");
+    const { rows } = await this.pool.query(
+      `SELECT highlight_id,
+         COUNT(*) FILTER (WHERE vote_type = 'agree')::int AS agrees,
+         COUNT(*) FILTER (WHERE vote_type = 'disagree')::int AS disagrees
+       FROM votes WHERE highlight_id IN (${placeholders})
+       GROUP BY highlight_id`,
+      highlightIds
+    );
+
+    for (const id of highlightIds) {
+      result.set(id, { agrees: 0, disagrees: 0 });
+    }
+    for (const row of rows) {
+      result.set(row.highlight_id, { agrees: row.agrees, disagrees: row.disagrees });
+    }
+    return result;
+  }
+
   async count(): Promise<number> {
     const { rows } = await this.pool.query("SELECT COUNT(*)::int AS count FROM votes");
     return rows[0].count;
   }
 
-  private toVote(row: any): Vote {
+  private toVote(row: VoteRow): Vote {
     return {
       id: row.id,
       highlightId: row.highlight_id,

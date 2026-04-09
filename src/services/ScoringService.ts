@@ -1,10 +1,11 @@
-import { HighlightClusterRepository, VoteRepository, ArticleRepository } from "@repositories";
+import { HighlightClusterRepository, VoteRepository, ArticleRepository, HighlightRepository } from "@repositories";
 
 export class ScoringService {
   constructor(
     private clusterRepo: HighlightClusterRepository,
     private voteRepo: VoteRepository,
-    private articleRepo: ArticleRepository
+    private articleRepo: ArticleRepository,
+    private highlightRepo: HighlightRepository
   ) {}
 
   async calculateArticleScore(articleId: string): Promise<number> {
@@ -13,6 +14,13 @@ export class ScoringService {
 
     const allHighlightIds = clusters.flatMap((c) => c.highlightIds);
     const allVotes = await this.voteRepo.findByHighlights(allHighlightIds);
+
+    // Build highlight → userId map for unique user counting
+    const allHighlights = await this.highlightRepo.findByArticle(articleId);
+    const highlightUserMap = new Map<string, string>();
+    for (const h of allHighlights) {
+      highlightUserMap.set(h.id, h.userId);
+    }
 
     // Group votes by highlight ID
     const votesByHighlight = new Map<string, typeof allVotes>();
@@ -40,8 +48,10 @@ export class ScoringService {
       const totalVotes = agrees + disagrees;
       if (totalVotes < 3) continue;
 
-      const uniqueAgreeingUsers = cluster.highlightIds.length;
-      const clusterScore = uniqueAgreeingUsers * (agrees / totalVotes);
+      const uniqueUsers = new Set(
+        cluster.highlightIds.map((id) => highlightUserMap.get(id)).filter(Boolean)
+      ).size;
+      const clusterScore = uniqueUsers * (agrees / totalVotes);
       totalScore += clusterScore;
     }
 

@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { RawArticle } from "@types";
 import { RawArticleRepository } from "./RawArticleRepository";
+import { RawArticleRow } from "./dbRowTypes";
 
 export class PostgresRawArticleRepository implements RawArticleRepository {
   constructor(private pool: Pool) {}
@@ -43,6 +44,14 @@ export class PostgresRawArticleRepository implements RawArticleRepository {
     return rows.map((row) => this.toRawArticle(row));
   }
 
+  async delete(id: string): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      "DELETE FROM raw_articles WHERE id = $1",
+      [id]
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
   async count(): Promise<number> {
     const { rows } = await this.pool.query(
       "SELECT COUNT(*)::int AS count FROM raw_articles"
@@ -50,7 +59,7 @@ export class PostgresRawArticleRepository implements RawArticleRepository {
     return rows[0].count;
   }
 
-  private toRawArticle(row: any): RawArticle {
+  private toRawArticle(row: RawArticleRow): RawArticle {
     return {
       id: row.id,
       title: row.title,

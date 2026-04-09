@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Article } from "@types";
 import { ArticleRepository, ArticlePage, SourceScoreRow } from "./ArticleRepository";
+import { ArticleRow } from "./dbRowTypes";
 
 export class PostgresArticleRepository implements ArticleRepository {
   constructor(private pool: Pool) {}
@@ -54,7 +55,7 @@ export class PostgresArticleRepository implements ArticleRepository {
 
   async findApproved(options?: { from?: number; to?: number }): Promise<Article[]> {
     const conditions = ["review_status = 'approved'"];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     let paramIndex = 1;
 
     if (options?.from != null) {
@@ -104,7 +105,7 @@ export class PostgresArticleRepository implements ArticleRepository {
 
   async getScoresBySource(options?: { from?: number; to?: number }): Promise<SourceScoreRow[]> {
     const conditions = ["review_status = 'approved'"];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     let paramIndex = 1;
 
     if (options?.from != null) {
@@ -161,7 +162,7 @@ export class PostgresArticleRepository implements ArticleRepository {
     return rows[0].count;
   }
 
-  private toArticle(row: any): Article {
+  private toArticle(row: ArticleRow): Article {
     return {
       id: row.id,
       rawArticleId: row.raw_article_id,

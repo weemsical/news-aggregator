@@ -27,6 +27,10 @@ export class TestInMemoryRawArticleRepository implements RawArticleRepository {
       .slice(0, limit);
   }
 
+  async delete(id: string): Promise<boolean> {
+    return this.rawArticles.delete(id);
+  }
+
   async count(): Promise<number> {
     return this.rawArticles.size;
   }

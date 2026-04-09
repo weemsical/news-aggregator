@@ -7,5 +7,7 @@ export { ScoringService } from "./ScoringService";
 export { dateSeededHash } from "./dateSeededShuffle";
 export { ReplacementService } from "./ReplacementService";
 export { NotificationService } from "./NotificationService";
+export { IngestionService } from "./IngestionService";
+export type { IngestionServiceDeps, FeedResult } from "./IngestionService";
 export { ScheduledIngestion } from "./ScheduledIngestion";
 export type { IngestionDeps } from "./ScheduledIngestion";
