@@ -6,3 +6,4 @@ export { commentsRouter } from "./comments";
 export { scoresRouter } from "./scores";
 export { adminRouter } from "./admin";
 export { replacementRulesRouter } from "./replacementRules";
+export { notificationsRouter } from "./notifications";

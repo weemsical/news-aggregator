@@ -6,3 +6,6 @@ export { ClusterService } from "./ClusterService";
 export { ScoringService } from "./ScoringService";
 export { dateSeededHash } from "./dateSeededShuffle";
 export { ReplacementService } from "./ReplacementService";
+export { NotificationService } from "./NotificationService";
+export { ScheduledIngestion } from "./ScheduledIngestion";
+export type { IngestionDeps } from "./ScheduledIngestion";

@@ -374,3 +374,56 @@ export async function reprocessArticle(
   if (!response.ok) throw new Error("Failed to reprocess article");
   return response.json();
 }
+
+// Notifications
+
+export interface NotificationData {
+  id: string;
+  userId: string;
+  type: string;
+  referenceId: string | null;
+  message: string;
+  isRead: boolean;
+  acknowledgedBy: string[];
+  createdAt: number;
+}
+
+export async function fetchNotifications(): Promise<NotificationData[]> {
+  const response = await fetch("/api/notifications", { credentials: "include" });
+  if (!response.ok) throw new Error("Failed to fetch notifications");
+  return response.json();
+}
+
+export async function fetchUnreadCount(): Promise<number> {
+  const response = await fetch("/api/notifications/unread-count", { credentials: "include" });
+  if (!response.ok) throw new Error("Failed to fetch unread count");
+  const data = await response.json();
+  return data.count;
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  const response = await fetch(`/api/notifications/${id}/read`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to mark notification read");
+}
+
+export async function acknowledgeNotification(id: string): Promise<void> {
+  const response = await fetch(`/api/notifications/${id}/acknowledge`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to acknowledge notification");
+}
+
+// Manual article refresh
+
+export async function refreshArticles(): Promise<{ articlesFound: number; newArticlesSaved: number }> {
+  const response = await fetch("/api/articles/refresh", {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to refresh articles");
+  return response.json();
+}

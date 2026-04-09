@@ -7,7 +7,34 @@
 .article-list__controls {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.25rem;
+}
+
+.article-list__refresh-btn {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.article-list__refresh-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #aaa;
+}
+
+.article-list__refresh-btn:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.article-list__refresh-result {
+  font-size: 0.8rem;
+  color: #27ae60;
 }
 
 .article-list__sort-label {

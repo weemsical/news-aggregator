@@ -23,6 +23,10 @@ export class TestInMemoryUserRepository implements UserRepository {
     return this.users.get(id);
   }
 
+  async findAll(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async findAdmins(): Promise<User[]> {
     return Array.from(this.users.values()).filter((u) => u.isAdmin);
   }

@@ -1,13 +1,14 @@
 import { Router, Request } from "express";
 import { HighlightRepository, VoteRepository } from "@repositories";
 import { requireAuth, optionalAuth } from "@middleware";
-import { ScoringService } from "@services";
+import { ScoringService, NotificationService } from "@services";
 import crypto from "crypto";
 
 export function votesRouter(
   highlightRepo: HighlightRepository,
   voteRepo: VoteRepository,
-  scoringService?: ScoringService
+  scoringService?: ScoringService,
+  notificationService?: NotificationService
 ): Router {
   const router = Router({ mergeParams: true });
 
@@ -64,6 +65,13 @@ export function votesRouter(
       if (scoringService) {
         await scoringService.recalculateScore(highlight.articleId);
       }
+      if (notificationService) {
+        if (voteType === "agree") {
+          await notificationService.notifyAgreement(highlightId, req.user!.userId);
+        } else {
+          await notificationService.notifyDisagreement(highlightId, req.user!.userId);
+        }
+      }
       res.status(200).json(updated);
       return;
     }
@@ -82,6 +90,13 @@ export function votesRouter(
     await voteRepo.save(vote);
     if (scoringService) {
       await scoringService.recalculateScore(highlight.articleId);
+    }
+    if (notificationService) {
+      if (voteType === "agree") {
+        await notificationService.notifyAgreement(highlightId, req.user!.userId);
+      } else {
+        await notificationService.notifyDisagreement(highlightId, req.user!.userId);
+      }
     }
     res.status(201).json(vote);
   });

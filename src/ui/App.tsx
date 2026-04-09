@@ -9,6 +9,7 @@ import { HowItWorks } from "./HowItWorks";
 import { DateFilter } from "./DateFilter";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { AuthForm } from "./AuthForm";
+import { NotificationBell } from "./NotificationBell";
 import "./App.css";
 
 type View = "articles" | "scores" | "how-it-works" | "admin";
@@ -68,6 +69,7 @@ function AppContent() {
         <div className="app__header-top">
           <h1>I Call BullShit</h1>
           <div className="app__auth">
+            {user && <NotificationBell />}
             {authLoading ? null : user ? (
               <>
                 <span className="app__user-email">{user.email}</span>
@@ -152,6 +154,13 @@ function AppContent() {
               total={total}
               pageSize={20}
               onPageChange={setPage}
+              showRefresh={!!user}
+              onRefreshComplete={() => {
+                loadArticles({ sort, page }).then((response) => {
+                  setArticles(response.articles);
+                  setTotal(response.total);
+                });
+              }}
             />
           </>
         )}

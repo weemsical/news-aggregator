@@ -32,6 +32,13 @@ export class PostgresUserRepository implements UserRepository {
     return rows.length > 0 ? this.toUser(rows[0]) : undefined;
   }
 
+  async findAll(): Promise<User[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM users ORDER BY email ASC"
+    );
+    return rows.map((row) => this.toUser(row));
+  }
+
   async findAdmins(): Promise<User[]> {
     const { rows } = await this.pool.query(
       "SELECT * FROM users WHERE is_admin = true ORDER BY email ASC"

@@ -7,3 +7,4 @@ export { Vote } from "./Vote";
 export { Comment } from "./Comment";
 export { HighlightCluster } from "./HighlightCluster";
 export { ReplacementRule } from "./ReplacementRule";
+export { Notification } from "./Notification";

@@ -1,6 +1,7 @@
 import { Router, Request } from "express";
 import { HighlightRepository, VoteRepository, CommentRepository } from "@repositories";
 import { requireAuth, optionalAuth } from "@middleware";
+import { NotificationService } from "@services";
 import crypto from "crypto";
 
 const MAX_COMMENT_LENGTH = 250;
@@ -10,7 +11,8 @@ const COMMENT_WARNING_THRESHOLD = 45;
 export function commentsRouter(
   highlightRepo: HighlightRepository,
   voteRepo: VoteRepository,
-  commentRepo: CommentRepository
+  commentRepo: CommentRepository,
+  notificationService?: NotificationService
 ): Router {
   const router = Router({ mergeParams: true });
 
@@ -90,6 +92,10 @@ export function commentsRouter(
     };
 
     await commentRepo.save(comment);
+
+    if (notificationService) {
+      await notificationService.notifyComment(highlightId, req.user!.userId);
+    }
 
     const newCount = await commentRepo.countByHighlight(highlightId);
     const warning = newCount >= COMMENT_WARNING_THRESHOLD && newCount < MAX_COMMENTS_PER_THREAD

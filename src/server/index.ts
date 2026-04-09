@@ -3,6 +3,8 @@ import { createRepositories } from "@repositories";
 import { loadSeedData } from "./seedLoader";
 import { getPool } from "../db/pool";
 import { runMigrations } from "../db/migrate";
+import { startCronJobs } from "./cron";
+import { NotificationService } from "@services";
 
 const PORT = process.env.PORT || 3001;
 
@@ -19,6 +21,18 @@ async function start() {
   await loadSeedData({ articles: repos.articles, rawArticles: repos.rawArticles });
 
   const app = createApp(repos);
+
+  const notificationService = new NotificationService(
+    repos.notifications, repos.highlights, repos.users, repos.comments
+  );
+  startCronJobs({
+    articles: repos.articles,
+    rawArticles: repos.rawArticles,
+    feedSources: repos.feedSources,
+    replacementRules: repos.replacementRules,
+    notificationService,
+  });
+
   app.listen(PORT, () => {
     console.log(`API server listening on port ${PORT}`);
   });

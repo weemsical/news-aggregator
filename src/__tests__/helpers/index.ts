@@ -8,3 +8,4 @@ export { TestInMemoryVoteRepository } from "./TestInMemoryVoteRepository";
 export { TestInMemoryCommentRepository } from "./TestInMemoryCommentRepository";
 export { TestInMemoryHighlightClusterRepository } from "./TestInMemoryHighlightClusterRepository";
 export { TestInMemoryReplacementRuleRepository } from "./TestInMemoryReplacementRuleRepository";
+export { TestInMemoryNotificationRepository } from "./TestInMemoryNotificationRepository";

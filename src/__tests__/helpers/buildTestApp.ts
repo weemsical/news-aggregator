@@ -9,6 +9,7 @@ import { TestInMemoryVoteRepository } from "./TestInMemoryVoteRepository";
 import { TestInMemoryCommentRepository } from "./TestInMemoryCommentRepository";
 import { TestInMemoryHighlightClusterRepository } from "./TestInMemoryHighlightClusterRepository";
 import { TestInMemoryReplacementRuleRepository } from "./TestInMemoryReplacementRuleRepository";
+import { TestInMemoryNotificationRepository } from "./TestInMemoryNotificationRepository";
 
 interface BuildTestAppOptions {
   rateLimitMiddleware?: RequestHandler;
@@ -24,6 +25,7 @@ export function buildTestApp(options: BuildTestAppOptions = {}) {
   const comments = new TestInMemoryCommentRepository();
   const highlightClusters = new TestInMemoryHighlightClusterRepository();
   const replacementRules = new TestInMemoryReplacementRuleRepository();
+  const notifications = new TestInMemoryNotificationRepository();
   const app = createApp({
     articles,
     highlights,
@@ -34,7 +36,8 @@ export function buildTestApp(options: BuildTestAppOptions = {}) {
     comments,
     highlightClusters,
     replacementRules,
+    notifications,
     rateLimitMiddleware: options.rateLimitMiddleware,
   });
-  return { app, articles, highlights, rawArticles, users, feedSources, votes, comments, highlightClusters, replacementRules };
+  return { app, articles, highlights, rawArticles, users, feedSources, votes, comments, highlightClusters, replacementRules, notifications };
 }

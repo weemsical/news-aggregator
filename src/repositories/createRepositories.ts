@@ -16,6 +16,8 @@ import { PostgresCommentRepository } from "./PostgresCommentRepository";
 import { PostgresHighlightClusterRepository } from "./PostgresHighlightClusterRepository";
 import { ReplacementRuleRepository } from "./ReplacementRuleRepository";
 import { PostgresReplacementRuleRepository } from "./PostgresReplacementRuleRepository";
+import { NotificationRepository } from "./NotificationRepository";
+import { PostgresNotificationRepository } from "./PostgresNotificationRepository";
 import { getPool } from "../db/pool";
 
 export interface Repositories {
@@ -28,6 +30,7 @@ export interface Repositories {
   comments: CommentRepository;
   highlightClusters: HighlightClusterRepository;
   replacementRules: ReplacementRuleRepository;
+  notifications: NotificationRepository;
 }
 
 export function createRepositories(): Repositories {
@@ -48,5 +51,6 @@ export function createRepositories(): Repositories {
     comments: new PostgresCommentRepository(pool),
     highlightClusters: new PostgresHighlightClusterRepository(pool),
     replacementRules: new PostgresReplacementRuleRepository(pool),
+    notifications: new PostgresNotificationRepository(pool),
   };
 }
