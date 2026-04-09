@@ -2,7 +2,7 @@ import { Router } from "express";
 import { FeedSourceRepository, ArticleRepository, UserRepository, RawArticleRepository, ReplacementRuleRepository } from "@repositories";
 import { requireAuth, createRequireAdmin } from "@middleware";
 import { getAllFeedSources } from "@data";
-import { fetchFeed, parseRssFeed, ReplacementService } from "@services";
+import { fetchFeed, parseRssFeed, ReplacementService, ScheduledIngestion } from "@services";
 
 export function adminRouter(
   feedSourceRepo: FeedSourceRepository,
@@ -205,6 +205,32 @@ export function adminRouter(
 
     const updated = await users.setAdmin(user.id, false);
     res.json({ id: updated!.id, email: updated!.email, isAdmin: updated!.isAdmin });
+  });
+
+  router.post("/refresh-all", async (_req, res) => {
+    if (!rawArticleRepo || !replacementRuleRepo) {
+      res.status(500).json({ error: "Refresh not available" });
+      return;
+    }
+
+    try {
+      const result = await ScheduledIngestion.runIngestion({
+        articles: articleRepo,
+        rawArticles: rawArticleRepo,
+        feedSources: feedSourceRepo,
+        replacementRules: replacementRuleRepo,
+      });
+
+      res.json({
+        articlesFound: result.feedResults.reduce(
+          (sum, r) => sum + r.articlesSaved,
+          0
+        ),
+        newArticlesSaved: result.totalArticlesSaved,
+      });
+    } catch {
+      res.status(500).json({ error: "Failed to refresh articles" });
+    }
   });
 
   // Review queue routes

@@ -1,17 +1,10 @@
 import { Router } from "express";
-import { ArticleRepository, FeedSourceRepository, RawArticleRepository, ReplacementRuleRepository } from "@repositories";
-import { anonymize, dateSeededHash, ScheduledIngestion } from "@services";
-import { requireAuth } from "@middleware";
+import { ArticleRepository } from "@repositories";
+import { anonymize, dateSeededHash } from "@services";
 
 const PAGE_SIZE = 20;
 
-export interface ArticlesRouterDeps {
-  feedSources?: FeedSourceRepository;
-  rawArticles?: RawArticleRepository;
-  replacementRules?: ReplacementRuleRepository;
-}
-
-export function articlesRouter(articleRepo: ArticleRepository, deps?: ArticlesRouterDeps): Router {
+export function articlesRouter(articleRepo: ArticleRepository): Router {
   const router = Router();
 
   router.get("/", async (req, res) => {
@@ -41,29 +34,6 @@ export function articlesRouter(articleRepo: ArticleRepository, deps?: ArticlesRo
       page,
       pageSize: PAGE_SIZE,
     });
-  });
-
-  router.post("/refresh", requireAuth, async (_req, res) => {
-    if (!deps?.feedSources || !deps?.rawArticles || !deps?.replacementRules) {
-      res.status(500).json({ error: "Refresh not available" });
-      return;
-    }
-
-    try {
-      const result = await ScheduledIngestion.runIngestion({
-        articles: articleRepo,
-        rawArticles: deps.rawArticles,
-        feedSources: deps.feedSources,
-        replacementRules: deps.replacementRules,
-      });
-
-      res.json({
-        totalArticlesSaved: result.totalArticlesSaved,
-        feedResults: result.feedResults.length,
-      });
-    } catch {
-      res.status(500).json({ error: "Failed to refresh articles" });
-    }
   });
 
   router.get("/:id", async (req, res) => {

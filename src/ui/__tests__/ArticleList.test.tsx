@@ -45,4 +45,13 @@ describe("ArticleList", () => {
     await userEvent.click(screen.getByText("First Article"));
     expect(handleSelect).toHaveBeenCalledWith("a1");
   });
+
+  it("does not have a showRefresh prop or render a refresh button", () => {
+    // ArticleList should not accept showRefresh — refresh lives in admin panel only
+    const props = { articles, onSelectArticle: () => {} };
+    expect(props).not.toHaveProperty("showRefresh");
+
+    render(<ArticleList {...props} />);
+    expect(screen.queryByRole("button", { name: /refresh/i })).not.toBeInTheDocument();
+  });
 });

@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { AnonymizedArticle } from "@types";
 import { ArticleCard } from "./ArticleCard";
-import { refreshArticles } from "./apiClient";
 import "./ArticleList.css";
 
 interface ArticleListProps {
@@ -13,8 +11,6 @@ interface ArticleListProps {
   total?: number;
   pageSize?: number;
   onPageChange?: (page: number) => void;
-  showRefresh?: boolean;
-  onRefreshComplete?: () => void;
 }
 
 export function ArticleList({
@@ -26,56 +22,24 @@ export function ArticleList({
   total = 0,
   pageSize = 20,
   onPageChange,
-  showRefresh = false,
-  onRefreshComplete,
 }: ArticleListProps) {
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshResult, setRefreshResult] = useState<string | null>(null);
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    setRefreshResult(null);
-    try {
-      const result = await refreshArticles();
-      setRefreshResult(`Saved ${result.newArticlesSaved} new articles`);
-      onRefreshComplete?.();
-    } catch {
-      setRefreshResult("Failed to refresh articles");
-    } finally {
-      setRefreshing(false);
-    }
-  }
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="article-list">
-      {(onSortChange || showRefresh) && (
+      {onSortChange && (
         <div className="article-list__controls">
-          {onSortChange && (
-            <label className="article-list__sort-label">
-              Sort by:{" "}
-              <select
-                className="article-list__sort-select"
-                value={sort}
-                onChange={(e) => onSortChange(e.target.value)}
-              >
-                <option value="date">Newest First</option>
-                <option value="propaganda">Most Propaganda</option>
-              </select>
-            </label>
-          )}
-          {showRefresh && (
-            <button
-              className="article-list__refresh-btn"
-              onClick={handleRefresh}
-              disabled={refreshing}
+          <label className="article-list__sort-label">
+            Sort by:{" "}
+            <select
+              className="article-list__sort-select"
+              value={sort}
+              onChange={(e) => onSortChange(e.target.value)}
             >
-              {refreshing ? "Refreshing..." : "Refresh Articles"}
-            </button>
-          )}
-          {refreshResult && (
-            <span className="article-list__refresh-result">{refreshResult}</span>
-          )}
+              <option value="date">Newest First</option>
+              <option value="propaganda">Most Propaganda</option>
+            </select>
+          </label>
         </div>
       )}
 

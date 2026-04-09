@@ -19,6 +19,7 @@ import {
   fetchReviewQueue,
   approveArticle,
   rejectArticle,
+  refreshAllFeeds,
 } from "./apiClient";
 import "./AdminPanel.css";
 
@@ -109,6 +110,8 @@ function FeedSourcesPanel({ sources, onReload }: { sources: AdminFeedSource[]; o
   const [submitting, setSubmitting] = useState(false);
   const [addError, setAddError] = useState("");
   const [fetchResults, setFetchResults] = useState<Record<string, FetchNowResult | string>>({});
+  const [fetchAllResult, setFetchAllResult] = useState<FetchNowResult | string | null>(null);
+  const [fetchingAll, setFetchingAll] = useState(false);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -140,6 +143,19 @@ function FeedSourcesPanel({ sources, onReload }: { sources: AdminFeedSource[]; o
       await onReload();
     } catch {
       // silent
+    }
+  }
+
+  async function handleFetchAll() {
+    setFetchingAll(true);
+    setFetchAllResult(null);
+    try {
+      const result = await refreshAllFeeds();
+      setFetchAllResult(result);
+    } catch (err: any) {
+      setFetchAllResult(err.message);
+    } finally {
+      setFetchingAll(false);
     }
   }
 
@@ -179,6 +195,24 @@ function FeedSourcesPanel({ sources, onReload }: { sources: AdminFeedSource[]; o
           {submitting ? "Adding..." : "Add Source"}
         </button>
       </form>
+
+      <div className="admin-panel__fetch-all">
+        <button
+          className="admin-panel__fetch-btn"
+          onClick={handleFetchAll}
+          disabled={fetchingAll}
+        >
+          {fetchingAll ? "Fetching..." : "Fetch All Feeds"}
+        </button>
+        {fetchAllResult && typeof fetchAllResult === "string" && (
+          <span className="admin-panel__fetch-error">{fetchAllResult}</span>
+        )}
+        {fetchAllResult && typeof fetchAllResult !== "string" && (
+          <span className="admin-panel__fetch-success">
+            Found {fetchAllResult.articlesFound} articles, saved {fetchAllResult.newArticlesSaved} new
+          </span>
+        )}
+      </div>
 
       <h3 className="admin-panel__list-title">Current Sources ({sources.length})</h3>
       <ul className="admin-panel__list">

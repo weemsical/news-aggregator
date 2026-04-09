@@ -154,13 +154,6 @@ function AppContent() {
               total={total}
               pageSize={20}
               onPageChange={setPage}
-              showRefresh={!!user}
-              onRefreshComplete={() => {
-                loadArticles({ sort, page }).then((response) => {
-                  setArticles(response.articles);
-                  setTotal(response.total);
-                });
-              }}
             />
           </>
         )}

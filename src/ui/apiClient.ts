@@ -506,13 +506,13 @@ export async function checkOverlap(
   return response.json();
 }
 
-// Manual article refresh
+// Admin: fetch all feeds
 
-export async function refreshArticles(): Promise<{ articlesFound: number; newArticlesSaved: number }> {
-  const response = await fetch("/api/articles/refresh", {
+export async function refreshAllFeeds(): Promise<FetchNowResult> {
+  const response = await fetch("/api/admin/refresh-all", {
     method: "POST",
     credentials: "include",
   });
-  if (!response.ok) throw new Error("Failed to refresh articles");
+  if (!response.ok) throw new Error("Failed to refresh feeds");
   return response.json();
 }

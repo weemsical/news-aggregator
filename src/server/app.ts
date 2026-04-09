@@ -29,7 +29,7 @@ export function createApp({ articles, highlights, users, feedSources, rawArticle
   app.use(express.json());
   app.use(cookieParser());
   app.use("/api/auth", authRouter(users));
-  app.use("/api/articles", articlesRouter(articles, { feedSources, rawArticles, replacementRules }));
+  app.use("/api/articles", articlesRouter(articles));
   app.use("/api/articles/:id/highlights", highlightsRouter(articles, highlights, rateLimitMiddleware, highlightClusters, votes, scoringService));
   app.use("/api/highlights", highlightActionsRouter(highlights, clusterService, scoringService));
   app.use("/api/highlights", votesRouter(highlights, votes, scoringService, notificationService));

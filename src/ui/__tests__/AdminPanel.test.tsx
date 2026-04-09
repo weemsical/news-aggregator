@@ -332,6 +332,28 @@ describe("AdminPanel", () => {
     });
   });
 
+  it("calls refreshAllFeeds and shows result when Fetch All Feeds is clicked", async () => {
+    const mockRefreshAllFeeds = apiClient.refreshAllFeeds as jest.MockedFunction<
+      typeof apiClient.refreshAllFeeds
+    >;
+    mockRefreshAllFeeds.mockResolvedValue({
+      articlesFound: 25,
+      newArticlesSaved: 8,
+    });
+
+    render(<AdminPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("Manage Feed Sources")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Fetch All Feeds" }));
+
+    await waitFor(() => {
+      expect(mockRefreshAllFeeds).toHaveBeenCalled();
+      expect(screen.getByText(/Found 25 articles, saved 8 new/)).toBeInTheDocument();
+    });
+  });
+
   it("shows publish mode badges", async () => {
     render(<AdminPanel />);
     await waitFor(() => {
