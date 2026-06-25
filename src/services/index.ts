@@ -9,5 +9,8 @@ export { ReplacementService } from "./ReplacementService";
 export { NotificationService } from "./NotificationService";
 export { IngestionService } from "./IngestionService";
 export type { IngestionServiceDeps, FeedResult } from "./IngestionService";
+export { HighlightService } from "./HighlightService";
+export { VoteService } from "./VoteService";
+export type { CastVoteParams, CastVoteResult } from "./VoteService";
 export { ScheduledIngestion } from "./ScheduledIngestion";
 export type { IngestionDeps } from "./ScheduledIngestion";

@@ -2,7 +2,7 @@ import { Router, Request } from "express";
 import { ArticleRepository, HighlightRepository, HighlightClusterRepository, VoteRepository } from "@repositories";
 import { requireAuth, optionalAuth, anonRateLimit } from "@middleware";
 import { RequestHandler } from "express";
-import { findOverlaps, ClusterService, ScoringService } from "@services";
+import { findOverlaps, ClusterService, ScoringService, HighlightService } from "@services";
 import crypto from "crypto";
 
 export function highlightsRouter(
@@ -17,6 +17,9 @@ export function highlightsRouter(
 
   const clusterService = clusterRepo
     ? new ClusterService(highlightRepo, clusterRepo)
+    : null;
+  const highlightService = clusterService && scoringService
+    ? new HighlightService(highlightRepo, clusterService, scoringService)
     : null;
 
   router.get("/check-overlap", requireAuth, async (req: Request<{ id: string }>, res) => {
@@ -116,14 +119,10 @@ export function highlightsRouter(
       updatedAt: now,
     };
 
-    await highlightRepo.save(highlight);
-
-    // Trigger cluster recalculation
-    if (clusterService && !isAnonymous) {
-      await clusterService.recalculateClusters(articleId, paragraphIndex);
-      if (scoringService) {
-        await scoringService.recalculateScore(articleId);
-      }
+    if (highlightService && !isAnonymous) {
+      await highlightService.createHighlight(highlight);
+    } else {
+      await highlightRepo.save(highlight);
     }
 
     res.status(201).json(highlight);
@@ -138,6 +137,9 @@ export function highlightActionsRouter(
   scoringService?: ScoringService
 ): Router {
   const router = Router();
+  const highlightService = clusterService && scoringService
+    ? new HighlightService(highlightRepo, clusterService, scoringService)
+    : null;
 
   router.put("/:id", requireAuth, async (req: Request<{ id: string }>, res) => {
     const highlight = await highlightRepo.findById(req.params.id);
@@ -181,14 +183,10 @@ export function highlightActionsRouter(
       return;
     }
 
-    await highlightRepo.delete(req.params.id);
-
-    // Trigger cluster recalculation
-    if (clusterService) {
-      await clusterService.recalculateClusters(highlight.articleId, highlight.paragraphIndex);
-      if (scoringService) {
-        await scoringService.recalculateScore(highlight.articleId);
-      }
+    if (highlightService) {
+      await highlightService.deleteHighlight(req.params.id);
+    } else {
+      await highlightRepo.delete(req.params.id);
     }
 
     res.status(204).send();

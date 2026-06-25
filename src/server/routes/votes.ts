@@ -1,8 +1,7 @@
 import { Router, Request } from "express";
 import { HighlightRepository, VoteRepository } from "@repositories";
 import { requireAuth, optionalAuth } from "@middleware";
-import { ScoringService, NotificationService } from "@services";
-import crypto from "crypto";
+import { ScoringService, NotificationService, VoteService } from "@services";
 
 export function votesRouter(
   highlightRepo: HighlightRepository,
@@ -11,6 +10,9 @@ export function votesRouter(
   notificationService?: NotificationService
 ): Router {
   const router = Router({ mergeParams: true });
+  const voteService = scoringService && notificationService
+    ? new VoteService(voteRepo, scoringService, notificationService)
+    : null;
 
   router.get("/:id/votes", optionalAuth, async (req: Request<{ id: string }>, res) => {
     const highlightId = req.params.id;
@@ -55,50 +57,39 @@ export function votesRouter(
       return;
     }
 
-    const existing = await voteRepo.findByHighlightAndUser(highlightId, req.user!.userId);
-
-    if (existing) {
-      const updated = await voteRepo.update(existing.id, {
+    if (voteService) {
+      const result = await voteService.castVote({
+        highlightId,
+        userId: req.user!.userId,
         voteType,
-        reason: voteType === "disagree" ? String(reason) : null,
+        reason: voteType === "disagree" ? String(reason) : undefined,
+        articleId: highlight.articleId,
       });
-      if (scoringService) {
-        await scoringService.recalculateScore(highlight.articleId);
-      }
-      if (notificationService) {
-        if (voteType === "agree") {
-          await notificationService.notifyAgreement(highlightId, req.user!.userId);
-        } else {
-          await notificationService.notifyDisagreement(highlightId, req.user!.userId);
-        }
-      }
-      res.status(200).json(updated);
-      return;
-    }
-
-    const now = Date.now();
-    const vote = {
-      id: crypto.randomUUID(),
-      highlightId,
-      userId: req.user!.userId,
-      voteType: voteType as "agree" | "disagree",
-      reason: voteType === "disagree" ? String(reason) : null,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    await voteRepo.save(vote);
-    if (scoringService) {
-      await scoringService.recalculateScore(highlight.articleId);
-    }
-    if (notificationService) {
-      if (voteType === "agree") {
-        await notificationService.notifyAgreement(highlightId, req.user!.userId);
+      res.status(result.isNew ? 201 : 200).json(result.vote);
+    } else {
+      const existing = await voteRepo.findByHighlightAndUser(highlightId, req.user!.userId);
+      if (existing) {
+        const updated = await voteRepo.update(existing.id, {
+          voteType,
+          reason: voteType === "disagree" ? String(reason) : null,
+        });
+        res.status(200).json(updated);
       } else {
-        await notificationService.notifyDisagreement(highlightId, req.user!.userId);
+        const crypto = await import("crypto");
+        const now = Date.now();
+        const vote = {
+          id: crypto.randomUUID(),
+          highlightId,
+          userId: req.user!.userId,
+          voteType: voteType as "agree" | "disagree",
+          reason: voteType === "disagree" ? String(reason) : null,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await voteRepo.save(vote);
+        res.status(201).json(vote);
       }
     }
-    res.status(201).json(vote);
   });
 
   return router;
