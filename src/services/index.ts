@@ -12,5 +12,7 @@ export type { IngestionServiceDeps, FeedResult } from "./IngestionService";
 export { HighlightService } from "./HighlightService";
 export { VoteService } from "./VoteService";
 export type { CastVoteParams, CastVoteResult } from "./VoteService";
+export { CommentService } from "./CommentService";
+export type { CreateCommentParams, CreateCommentResult } from "./CommentService";
 export { ScheduledIngestion } from "./ScheduledIngestion";
 export type { IngestionDeps } from "./ScheduledIngestion";
