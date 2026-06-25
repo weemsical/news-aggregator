@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { FeedSourceRepository, ArticleRepository, UserRepository, RawArticleRepository, ReplacementRuleRepository } from "@repositories";
 import { requireAuth, createRequireAdmin } from "@middleware";
-import { getAllFeedSources } from "@data";
-import { ReplacementService, ScheduledIngestion, IngestionService } from "@services";
+import { ReplacementService, ScheduledIngestion, IngestionService, FeedSourceService } from "@services";
 
 export function adminRouter(
   feedSourceRepo: FeedSourceRepository,
@@ -13,52 +12,26 @@ export function adminRouter(
 ): Router {
   const router = Router();
   const requireAdmin = createRequireAdmin(users);
+  const feedSourceService = new FeedSourceService(feedSourceRepo);
 
   router.use(requireAuth, requireAdmin);
 
   router.get("/feed-sources", async (_req, res) => {
     try {
-      const all = await getAllFeedSources(feedSourceRepo);
-      const dbSources = await feedSourceRepo.findAll();
-      const dbSourceIds = new Set(dbSources.map((s) => s.sourceId));
-
-      const enriched = all.map((s) => ({
-        ...s,
-        isDynamic: dbSourceIds.has(s.sourceId),
-      }));
-      res.json(enriched);
+      res.json(await feedSourceService.listEnriched());
     } catch {
       res.status(500).json({ error: "Failed to load feed sources" });
     }
   });
 
   router.post("/feed-sources", async (req, res) => {
-    const { sourceId, name, feedUrl, defaultTags } = req.body;
-
-    if (!sourceId || !String(sourceId).trim()) {
-      res.status(400).json({ error: "sourceId is required" });
-      return;
-    }
-    if (!name || !String(name).trim()) {
-      res.status(400).json({ error: "name is required" });
-      return;
-    }
-    if (!feedUrl || !String(feedUrl).trim()) {
-      res.status(400).json({ error: "feedUrl is required" });
-      return;
-    }
-
-    const source = {
-      sourceId: String(sourceId).trim(),
-      name: String(name).trim(),
-      feedUrl: String(feedUrl).trim(),
-      defaultTags: Array.isArray(defaultTags) ? defaultTags.map(String) : [],
-      publishMode: (req.body.publishMode === "manual" ? "manual" : "auto") as "auto" | "manual",
-    };
-
     try {
-      await feedSourceRepo.save(source);
-      res.status(201).json(source);
+      const result = await feedSourceService.create(req.body);
+      if (!result.ok) {
+        res.status(result.status).json({ error: result.error });
+        return;
+      }
+      res.status(201).json(result.source);
     } catch {
       res.status(500).json({ error: "Failed to save feed source" });
     }
@@ -66,7 +39,7 @@ export function adminRouter(
 
   router.delete("/feed-sources/:sourceId", async (req, res) => {
     try {
-      const removed = await feedSourceRepo.remove(req.params.sourceId);
+      const removed = await feedSourceService.remove(req.params.sourceId);
       if (!removed) {
         res.status(404).json({ error: "Feed source not found" });
         return;
@@ -79,18 +52,11 @@ export function adminRouter(
 
   router.put("/feed-sources/:sourceId", async (req, res) => {
     try {
-      const all = await getAllFeedSources(feedSourceRepo);
-      const existing = all.find((s) => s.sourceId === req.params.sourceId);
-      if (!existing) {
+      const updated = await feedSourceService.updatePublishMode(req.params.sourceId, req.body.publishMode);
+      if (!updated) {
         res.status(404).json({ error: "Feed source not found" });
         return;
       }
-
-      const updated = {
-        ...existing,
-        publishMode: (req.body.publishMode === "manual" ? "manual" : existing.publishMode ?? "auto") as "auto" | "manual",
-      };
-      await feedSourceRepo.save(updated);
       res.json(updated);
     } catch {
       res.status(500).json({ error: "Failed to update feed source" });
@@ -99,8 +65,7 @@ export function adminRouter(
 
   router.post("/feed-sources/:sourceId/fetch", async (req, res) => {
     try {
-      const all = await getAllFeedSources(feedSourceRepo);
-      const source = all.find((s) => s.sourceId === req.params.sourceId);
+      const source = await feedSourceService.findById(req.params.sourceId);
       if (!source) {
         res.status(404).json({ error: "Feed source not found" });
         return;
